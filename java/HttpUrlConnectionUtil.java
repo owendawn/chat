@@ -223,7 +223,7 @@ public class HttpUrlConnectionUtil {
             if (pos > 0) {
                 tempParams.append("&");
             }
-            tempParams.append(String.format("%s=%s", key, URLEncoder.encode(params.get(key), "utf-8")));
+             tempParams.append(String.format("%s=%s", key, params.get(key)==null?"":URLEncoder.encode(params.get(key), "utf-8")));
             pos++;
         }
         return tempParams.toString();
