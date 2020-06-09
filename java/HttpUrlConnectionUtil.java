@@ -1,4 +1,4 @@
-package com.zone.uvdownloader.util;
+package cn.hs.qdh.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,8 +35,8 @@ public class HttpUrlConnectionUtil {
         // 创建SSLContext对象，并使用我们指定的信任管理器初始化
         TrustManager[] tm = {new X509TrustManager() {
             @Override
-            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                return new java.security.cert.X509Certificate[]{};
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[]{};
             }
 
             @Override
@@ -373,7 +373,7 @@ public class HttpUrlConnectionUtil {
         public <T> T getResponseEntity(Class<T> cls) {
             try {
                 return objectMapper.readValue(getResponseBodyStr(), cls);
-            } catch (JsonProcessingException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
                 return null;
             }
