@@ -1,8 +1,9 @@
-package com.hh.jinhua.service.util;
+package com.util;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.nio.ch.IOUtil;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -26,18 +27,25 @@ import java.util.UUID;
  * @author owen pan
  */
 public class PFUtil {
-    /**
-     * 日志输出器
-     */
-    private static Logger log = LoggerFactory.getLogger(PFUtil.class);
+    private static Logger logger = LoggerFactory.getLogger(PFUtil.class);
 
-    /**
-     * 获取默认编码
-     *
-     * @return 默认编码
-     */
     public static Charset getDefaultCharset() {
-        return Charset.forName("UTF-8");
+        return StandardCharsets.UTF_8;
+//        return Charset.forName("UTF-8");
+    }
+
+    public static boolean isBlank(CharSequence cs) {
+        int strLen;
+        if (cs != null && (strLen = cs.length()) != 0) {
+            for (int i = 0; i < strLen; ++i) {
+                if (!Character.isWhitespace(cs.charAt(i))) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return true;
+        }
     }
 
     /**
@@ -104,8 +112,6 @@ public class PFUtil {
 
     /**
      * 获取系统唯一编号,采用UUID编码规则
-     *
-     * @return String
      */
     public static String getRandomUUID() {
         return UUID.randomUUID().toString().replace("-", "").toUpperCase();
@@ -114,27 +120,14 @@ public class PFUtil {
 
     /**
      * 获取当前time-zone
-     *
-     * @return 日期
      */
     public static ZoneId getZoneId() {
         return ZoneId.of("UTC+08:00");
     }
 
-    /**
-     * 获取系统当前日期毫秒值
-     *
-     * @return 时间戳
-     */
-    public static long getDateTimeEpochMilli() {
-        return getDateTime().toInstant(ZoneOffset.ofHours(8)).toEpochMilli();
-    }
 
     /**
      * 获取系统当前日期时间戳
-     *
-     * @param time 时间
-     * @return 时间戳
      */
     public static long getDateTimeEpochMilli(LocalDateTime time) {
         if (null == time) {
@@ -143,10 +136,12 @@ public class PFUtil {
         return time.toInstant(ZoneOffset.ofHours(8)).toEpochMilli();
     }
 
+    public static long getDateTimeEpochMilli() {
+        return getDateTimeEpochMilli(getDateTime());
+    }
+
     /**
      * 获取系统当前日期
-     *
-     * @return 日期
      */
     public static LocalDateTime getDateTime() {
         return LocalDateTime.now(getZoneId());
@@ -154,20 +149,11 @@ public class PFUtil {
 
     /**
      * 把字符串时间,转换成日期
-     *
-     * @param timestamp 时间戳
-     * @return 日期
      */
-    public static LocalDateTime getDate(long timestamp) {
-        return Instant.ofEpochMilli(timestamp).atZone(getZoneId()).toLocalDateTime();
+    public static LocalDate getDate(long timestamp) {
+        return Instant.ofEpochMilli(timestamp).atZone(getZoneId()).toLocalDate();
     }
 
-    /**
-     * 把字符串时间,转换成日期
-     *
-     * @param timestamp 时间戳
-     * @return 日期
-     */
     public static LocalDateTime getDateTime(long timestamp) {
         return Instant.ofEpochMilli(timestamp).atZone(getZoneId()).toLocalDateTime();
     }
@@ -180,15 +166,13 @@ public class PFUtil {
      */
     public static LocalDateTime getDateTime(String val) {
         LocalDateTime localDateTime = null;
-        if (StringUtils.isBlank(val)) {
+        if (isBlank(val)) {
             return null;
         }
         try {
             val = val.trim();
             String pattern = "yyyy-MM-dd HH:mm:ss";
             val = val.replace("/", "-");
-            // 处理 2019-06-27 10:06:46.0
-            val = val.replace(".0", "");
             if ("yyyy-MM-dd".length() == val.length()) {
                 val += " 00:00:00";
             } else if ("yyyy-MM-dd HH:mm".length() == val.length()) {
@@ -200,86 +184,47 @@ public class PFUtil {
             }
             localDateTime = LocalDateTime.parse(val, DateTimeFormatter.ofPattern(pattern));
         } catch (Exception e) {
-            log.error("把字符串时间[ " + val + " ], 转换成时间发生异常:" + e.getMessage());
+            logger.error("把字符串时间[ " + val + " ], 转换成时间发生异常:" + e.getMessage());
         }
         return localDateTime;
     }
 
     /**
      * 把字符串时间,转换成时间
-     *
-     * @param pattern 日期格式
-     * @param val     日期字符串.格式为:yyyy-MM-dd HH:mm:ss
-     * @return 日期
      */
     public static LocalDateTime getDateTime(String pattern, String val) {
-        if (StringUtils.isBlank(val) || StringUtils.isBlank(pattern)) {
+        if (isBlank(val) || isBlank(pattern)) {
             return null;
         }
         LocalDateTime localDateTime = null;
         try {
             localDateTime = LocalDateTime.parse(val, DateTimeFormatter.ofPattern(pattern));
         } catch (Exception e) {
-            log.error("把字符串时间[ " + val + " ], 转换成时间发生异常:" + e.getMessage());
+            logger.error("把字符串时间[ " + val + " ], 转换成时间发生异常:" + e.getMessage());
         }
         return localDateTime;
     }
 
-    /**
-     * 格式化指定日期 默认格式 yyyy-MM-dd HH:mm:ss
-     *
-     * @return 格式化后的字符串
-     */
-    public static String getFormatDateTime() {
-        return getFormatDateTime(getDateTime());
-    }
-
-    /**
-     * 格式化指定日期 默认格式 yyyy-MM-dd HH:mm:ss
-     *
-     * @param dateTime 传入的日期
-     * @return 格式化后的字符串
-     */
-    public static String getFormatDateTime(LocalDateTime dateTime) {
-        return getFormatDateTime(null, dateTime);
-    }
 
     /**
      * 格式化指定日期
-     *
-     * @param pattern  传入日期格式"yyyy-MM-dd HH:mm:ss"
-     * @param dateTime 传入的日期
-     * @return 格式化后的字符串
      */
     public static String getFormatDateTime(String pattern, LocalDateTime dateTime) {
         if (null == dateTime) {
             return "";
         }
-
-        if (StringUtils.isBlank(pattern)) {
-            // 默认显示的时间格式
+        if (isBlank(pattern)) {
             pattern = "yyyy-MM-dd HH:mm:ss";
         }
         return dateTime.format(DateTimeFormatter.ofPattern(pattern));
     }
 
-    /**
-     * 格式化指定日期 yyyy-MM-dd
-     *
-     * @return 格式化后的字符串
-     */
-    public static String getFormatDate() {
-        return getFormatDate("yyyy-MM-dd", getDateTime());
+    public static String getFormatDateTime() {
+        return getFormatDateTime(getDateTime());
     }
 
-    /**
-     * 格式化指定日期 yyyy-MM-dd
-     *
-     * @param dateTime 传入的日期
-     * @return 格式化后的字符串
-     */
-    public static String getFormatDate(Temporal dateTime) {
-        return getFormatDate("yyyy-MM-dd", dateTime);
+    public static String getFormatDateTime(LocalDateTime dateTime) {
+        return getFormatDateTime(null, dateTime);
     }
 
     /**
@@ -293,18 +238,24 @@ public class PFUtil {
         if (null == dateTime) {
             return "";
         }
-        if (StringUtils.isBlank(pattern)) {
+        if (isBlank(pattern)) {
             pattern = "yyyy-MM-dd";
         }
-        if(dateTime instanceof LocalDateTime) {
-            return LocalDateTime.class.cast( dateTime).format(DateTimeFormatter.ofPattern(pattern));
-        }else if(dateTime instanceof LocalDate){
+        if (dateTime instanceof LocalDateTime) {
+            return LocalDateTime.class.cast(dateTime).format(DateTimeFormatter.ofPattern(pattern));
+        } else if (dateTime instanceof LocalDate) {
             return LocalDate.class.cast(dateTime).format(DateTimeFormatter.ofPattern(pattern));
-        }else {
-            throw new RuntimeException("not support format the bean of "+dateTime.getClass());
+        } else {
+            throw new RuntimeException("not support format the bean of " + dateTime.getClass());
         }
     }
+    public static String getFormatDate(Temporal dateTime) {
+        return getFormatDate("yyyy-MM-dd", dateTime);
+    }
 
+    public static String getFormatDate() {
+        return getFormatDate("yyyy-MM-dd", getDateTime());
+    }
 
     /**
      * 发送信息(UDP),并接收一个返回包
@@ -321,7 +272,7 @@ public class PFUtil {
             if (timeout <= 0) {
                 timeout = 1000;
             }
-            log.debug("发送【" + ip + ":" + port + "】：" + msg);
+            logger.debug("发送【" + ip + ":" + port + "】：" + msg);
 
             DatagramSocket client = new DatagramSocket();
             byte[] send = msg.getBytes(getDefaultCharset());
@@ -334,9 +285,9 @@ public class PFUtil {
             client.receive(recPacket);
             recVal = new String(recs, 0, recPacket.getLength());
             client.close();
-            log.debug("接收【" + ip + ":" + port + "】：" + recVal);
+            logger.debug("接收【" + ip + ":" + port + "】：" + recVal);
         } catch (Exception e) {
-            log.error(e.getMessage());
+            logger.error(e.getMessage());
             return "操作失败！" + e.getMessage();
         }
         return recVal;
@@ -357,7 +308,7 @@ public class PFUtil {
             if (timeout <= 0) {
                 timeout = 1000;
             }
-            log.debug("TCP【" + ip + ":" + port + "】：" + msg);
+            logger.debug("TCP【" + ip + ":" + port + "】：" + msg);
 
             Socket client = new Socket(ip, port);
             client.setSoTimeout(timeout);
@@ -376,9 +327,9 @@ public class PFUtil {
             os.close();
             is.close();
             client.close();
-            log.debug("接收【" + ip + ":" + port + "】：" + recVal);
+            logger.debug("接收【" + ip + ":" + port + "】：" + recVal);
         } catch (Exception e) {
-            log.error(e.getMessage());
+            logger.error(e.getMessage());
             return "操作失败！" + e.getMessage();
         }
         return recVal;
@@ -398,7 +349,7 @@ public class PFUtil {
             if (timeout <= 0) {
                 timeout = 1000;
             }
-            log.debug("发送【" + ip + ":" + port + "】：" + msg);
+            logger.debug("发送【" + ip + ":" + port + "】：" + msg);
 
             Socket client = new Socket(ip, port);
             client.setSoTimeout(timeout);
@@ -411,7 +362,7 @@ public class PFUtil {
             os.close();
             client.close();
         } catch (Exception e) {
-            log.error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 
@@ -441,7 +392,7 @@ public class PFUtil {
             // 刷新此缓冲的输出流
             outBuff.flush();
         } catch (Exception e) {
-            log.error(e.getMessage());
+            logger.error(e.getMessage());
         } finally {
             // 关闭流
             if (inBuff != null) {
@@ -461,15 +412,17 @@ public class PFUtil {
      */
     public static String readFile(String filePath) {
         StringBuffer stringBuffer = new StringBuffer();
+        BufferedReader reader=null;
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(new File(filePath)));
+            reader = new BufferedReader(new FileReader(new File(filePath)));
             String val = null;
             while ((val = reader.readLine()) != null) {
                 stringBuffer.append(val);
             }
-            reader.close();
         } catch (IOException e) {
-            log.error(e.getMessage());
+            logger.error(e.getMessage());
+        }finally {
+            IOUtils.closeQuietly(reader);
         }
         return stringBuffer.toString();
     }
@@ -484,7 +437,7 @@ public class PFUtil {
         try (FileWriter writer = new FileWriter(filePath)) {
             writer.write(content);
         } catch (IOException e) {
-            log.error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 
@@ -499,7 +452,7 @@ public class PFUtil {
             outputStream.write(content);
             outputStream.flush();
         } catch (IOException e) {
-            log.error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 
@@ -526,7 +479,7 @@ public class PFUtil {
                 inStream.close();
             }
         } catch (IOException e) {
-            log.error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 
@@ -559,13 +512,13 @@ public class PFUtil {
                 }
                 outputStream.flush();
             } catch (Exception e) {
-                log.error("url = [" + url + "], filePath = [" + filePath + "]");
-                log.error(e.getMessage(), e);
+                logger.error("url = [" + url + "], filePath = [" + filePath + "]");
+                logger.error(e.getMessage(), e);
                 return false;
             }
         } catch (Exception e) {
-            log.error("url = [" + url + "], filePath = [" + filePath + "]");
-            log.error(e.getMessage(), e);
+            logger.error("url = [" + url + "], filePath = [" + filePath + "]");
+            logger.error(e.getMessage(), e);
             return false;
         }
         return true;
@@ -596,7 +549,7 @@ public class PFUtil {
             }
             br.close();
         } catch (Exception e) {
-            log.error(e.getMessage());
+            logger.error(e.getMessage());
             e.printStackTrace();
         }
         return content.toString();
@@ -609,7 +562,7 @@ public class PFUtil {
      * @return 前三后四中间补* （188****7896）
      */
     public static String getFormatMobile(String mobile) {
-        if (StringUtils.isBlank(mobile) || mobile.length() < 11) {
+        if (isBlank(mobile) || mobile.length() < 11) {
             return mobile;
         }
         return mobile.replaceAll("(\\d{3})\\d{4}(\\d{4})", "$1****$2");
@@ -622,7 +575,7 @@ public class PFUtil {
      * @return
      */
     public static String escapeSql(String sql) {
-        if (StringUtils.isBlank(sql)) {
+        if (isBlank(sql)) {
             return sql;
         }
         sql = sql.replace("_", "\\_")
@@ -638,7 +591,7 @@ public class PFUtil {
      * @return 格式化后的字符串
      */
     public static String toNumberString(double value, String pattern) {
-        if (StringUtils.isBlank(pattern)) {
+        if (isBlank(pattern)) {
             pattern = "#.##";
         }
         DecimalFormat df = new DecimalFormat(pattern);
@@ -688,9 +641,10 @@ public class PFUtil {
 
     /**
      * 将list中，根据对象某一属性，将该属性设为key的map
+     *
      * @param list 对象集合
-     * @param key 关键字
-     * @param <T> 对象类型
+     * @param key  关键字
+     * @param <T>  对象类型
      * @return HashMap<String, T>
      */
     public static <T> HashMap<String, T> listToMapByKey(List<T> list, String key) {
@@ -714,7 +668,7 @@ public class PFUtil {
                     for (T o : list) {
                         Method method = o.getClass().getMethod("get" + key.substring(0, 1).toUpperCase() + key.substring(1));
                         Object k = method.invoke(o);
-                        map.put(k.toString(),o);
+                        map.put(k.toString(), o);
                     }
                 } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
 
@@ -726,32 +680,33 @@ public class PFUtil {
 
     /**
      * 前面补占位符到固定长度
+     *
      * @param raw
      * @param replace
      * @param length
      * @return
      */
-    public static String fillToPrefix(Object raw,char replace,int length){
-        String str=raw.toString();
-        while (str.length()<length){
-            str=replace+str;
+    public static String fillToPrefix(Object raw, char replace, int length) {
+        String str = raw.toString();
+        while (str.length() < length) {
+            str = replace + str;
         }
         return str;
     }
 
-    public static PanMap<String,Object> newPanMap(){
-        return new PanMap<String,Object>();
+    public static PanMap<String, Object> newPanMap() {
+        return new PanMap<String, Object>();
     }
 
-    public static class PanMap<K,V> extends HashMap<K,V>{
+    public static class PanMap<K, V> extends HashMap<K, V> {
 
-        public PanMap<K,V> setKeyValuePair(K key, V value) {
+        public PanMap<K, V> setKeyValuePair(K key, V value) {
             super.put(key, value);
             return this;
         }
     }
 
-    public static class PanKeyValuePair{
+    public static class PanKeyValuePair {
         private String key;
         private Object value;
 
