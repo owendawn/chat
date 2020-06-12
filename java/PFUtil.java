@@ -1,8 +1,7 @@
-package com.util;
+package com.hh.hydrologyalarm.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.nio.ch.IOUtil;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -248,6 +247,7 @@ public class PFUtil {
             throw new RuntimeException("not support format the bean of " + dateTime.getClass());
         }
     }
+
     public static String getFormatDate(Temporal dateTime) {
         return getFormatDate("yyyy-MM-dd", dateTime);
     }
@@ -411,7 +411,7 @@ public class PFUtil {
      */
     public static String readFile(String filePath) {
         StringBuffer stringBuffer = new StringBuffer();
-        BufferedReader reader=null;
+        BufferedReader reader = null;
         try {
             reader = new BufferedReader(new FileReader(new File(filePath)));
             String val = null;
@@ -420,8 +420,14 @@ public class PFUtil {
             }
         } catch (IOException e) {
             logger.error(e.getMessage());
-        }finally {
-            IOUtils.closeQuietly(reader);
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
         return stringBuffer.toString();
     }
