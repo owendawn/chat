@@ -1,6 +1,7 @@
 package com.hh.util;
 
 import com.mchange.lang.ByteUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.types.selectors.SizeSelector;
 import org.fusesource.hawtbuf.BufferInputStream;
@@ -432,9 +433,11 @@ public class PFUtil {
         }
     }
     public static String getStringFromInputSteam(InputStream inputStream){
-        InputStreamReader isr=new InputStreamReader(inputStream);
-        BufferedReader br=new BufferedReader(isr);
+        InputStreamReader isr=null;
+        BufferedReader br=null;
         try {
+            isr=new InputStreamReader(inputStream, "UTF-8");
+            br=new BufferedReader(isr);
             List<String> list=new ArrayList<>();
             String line=null;
             while ((line=br.readLine())!=null) {
@@ -444,6 +447,21 @@ public class PFUtil {
         }catch (Exception e){
             log.error(e);
             return null;
+        }finally {
+            if(br!=null){
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if(isr!=null){
+                try {
+                    isr.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
