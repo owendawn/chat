@@ -9,11 +9,26 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * 2020/7/20 10:50
+ * Excel操作工具类
+ *
+ *
+ *       <dependency>
+ *             <groupId>org.apache.poi</groupId>
+ *             <artifactId>poi-ooxml</artifactId>
+ *             <version>4.1.0</version>
+ *         </dependency>
+ *
+ *         
+ * @author owen pan
+ */
 public class ExcelUtil {
 
     public static String getStringVal(CellBase cell) {
@@ -174,14 +189,20 @@ public class ExcelUtil {
      * @param dataList excel数据
      * @author owen pan
      */
-    public static void createExcelOfXlsx(String target, String[] headList, List<List<String>> dataList) throws Exception {
+    public static void createExcelOfXlsx(File target, List<String> headList, List<List<String>> dataList) throws Exception {
+        try (FileOutputStream fis = new FileOutputStream(target)) {
+            createExcelOfXlsx(fis, headList, dataList);
+        }
+    }
+
+    public static void createExcelOfXlsx(OutputStream os, List<String> headList, List<List<String>> dataList) throws Exception {
         XSSFWorkbook workbook = new XSSFWorkbook();
         XSSFSheet sheet = workbook.createSheet();
         XSSFRow row = sheet.createRow(0);
-        for (int i = 0; i < headList.length; i++) {
+        for (int i = 0; i < headList.size(); i++) {
             XSSFCell cell = row.createCell(i);
             cell.setCellType(CellType.STRING);
-            cell.setCellValue(headList[i]);
+            cell.setCellValue(headList.get(i));
         }
         // ===============================================================
         for (int n = 0; n < dataList.size(); n++) {
@@ -193,17 +214,32 @@ public class ExcelUtil {
                 cell.setCellValue(cellList.get(i));
             }
         }
-        FileOutputStream fos = new FileOutputStream(target);
-        workbook.write(fos);
-        fos.flush();
-        fos.close();
+        workbook.write(os);
+        os.flush();
+        os.close();
+    }
+
+    /**
+     * 2020/7/20 10:51
+     * 下载excel
+     * @param response 返回请求体
+     * @param fileName 下载文件名
+     * @param headList excel头
+     * @param dataList  excel数据
+     * @author owen pan
+     */
+    public static void downloadExcelOfXlsx(HttpServletResponse response, String fileName, List<String> headList, List<List<String>> dataList) throws Exception {
+        response.setContentType("octets/stream");
+        response.setHeader("Content-Disposition", "attachment;filename=\"" + new String(fileName.getBytes("UTF-8"), "iso8859-1") + "\"");
+        OutputStream outputStream = response.getOutputStream();
+        createExcelOfXlsx(outputStream, headList, dataList);
     }
 
     public static void main(String[] args) {
         List<List<String>> ll = null;
         try {
 //            ll = readExcel(new File("C:\\Users\\owen-c2-pc\\Desktop/截面串口服务器IP信息.xls"), 0);
-            ll = readExcel(new File("C:\\Users\\owen-c2-pc\\Desktop/衢州航标详细清单表-20200607.xlsx"),0);
+            ll = readExcel(new File("C:\\Users\\owen-c2-pc\\Desktop/衢州航标详细清单表-20200607.xlsx"), 0);
         } catch (Exception e) {
             e.printStackTrace();
         }
