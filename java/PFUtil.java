@@ -1,4 +1,4 @@
-package cn.hs.crosssectionreceive.util;
+package cn.hs.guangzhou.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -872,6 +872,42 @@ public class PFUtil {
             return true;
         } else {
             return true;
+        }
+    }
+
+    /**
+     * 按顺序取值，返回第一个非空非""字符串,若没有返回null
+     * @param strs 选择字符串数组
+     * @return String
+     * @author owen pan
+     */
+    public static String nvl(String... strs){
+        for (String str : strs) {
+            if (str != null && str.length() > 0) {
+                return str;
+            }
+        }
+        return null;
+    }
+    public static String nvlToString(Object... strs){
+        for (Object str : strs) {
+            if (str != null && String.valueOf(str).length() > 0) {
+                return String.valueOf(str);
+            }
+        }
+        return null;
+    }
+
+    public static Object decode(Object... os){
+        for (int i = 1; i+1 < os.length; i+=2) {
+            if(String.valueOf(os[0]).equals(String.valueOf(os[i]))){
+                return os[i+1];
+            }
+        }
+        if(os.length%2==0){
+            return os[os.length-1];
+        }else{
+            return os[0];
         }
     }
 
