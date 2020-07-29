@@ -1,4 +1,4 @@
-package cn.hs.guangzhou.util;
+package cn.hs.thirdpart.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,9 +7,13 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -877,11 +881,12 @@ public class PFUtil {
 
     /**
      * 按顺序取值，返回第一个非空非""字符串,若没有返回null
+     *
      * @param strs 选择字符串数组
      * @return String
      * @author owen pan
      */
-    public static String nvl(String... strs){
+    public static String nvl(String... strs) {
         for (String str : strs) {
             if (str != null && str.length() > 0) {
                 return str;
@@ -889,7 +894,8 @@ public class PFUtil {
         }
         return null;
     }
-    public static String nvlToString(Object... strs){
+
+    public static String nvlToString(Object... strs) {
         for (Object str : strs) {
             if (str != null && String.valueOf(str).length() > 0) {
                 return String.valueOf(str);
@@ -898,17 +904,68 @@ public class PFUtil {
         return null;
     }
 
-    public static Object decode(Object... os){
-        for (int i = 1; i+1 < os.length; i+=2) {
-            if(String.valueOf(os[0]).equals(String.valueOf(os[i]))){
-                return os[i+1];
+    public static Object decode(Object... os) {
+        for (int i = 1; i + 1 < os.length; i += 2) {
+            if (String.valueOf(os[0]).equals(String.valueOf(os[i]))) {
+                return os[i + 1];
             }
         }
-        if(os.length%2==0){
-            return os[os.length-1];
-        }else{
+        if (os.length % 2 == 0) {
+            return os[os.length - 1];
+        } else {
             return os[0];
         }
+    }
+
+    public static String emptyToNull(String data) {
+        if (data == null || data.trim().length() <= 0) {
+            return null;
+        }
+        return data.trim();
+    }
+
+    public static <T> T castButEmptyToNull(String data, Class<T> tClass) {
+        if (data == null || data.trim().length() <= 0) {
+            return null;
+        }
+        data = data.trim();
+        try {
+            if (tClass == String.class) {
+                return tClass.cast(data);
+            } else if (tClass == Integer.class) {
+                return tClass.cast(Integer.parseInt(data));
+            } else if (tClass == Short.class) {
+                return tClass.cast(Short.parseShort(data));
+            } else if (tClass == Long.class) {
+                return tClass.cast(Long.parseLong(data));
+            } else if (tClass == Float.class) {
+                return tClass.cast(Float.parseFloat(data));
+            } else if (tClass == Double.class) {
+                return tClass.cast(Double.parseDouble(data));
+            } else if (tClass == BigDecimal.class) {
+                return (T) new BigDecimal(data);
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            System.out.println("转换异常：" + data);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static String md5(String plainText) {
+        byte[] secretBytes = null;
+        try {
+            secretBytes = MessageDigest.getInstance("md5").digest(plainText.getBytes());
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+        String md5code = new BigInteger(1, secretBytes).toString(16);
+        for (int i = 0; i < 32 - md5code.length(); i++) {
+            md5code = "0" + md5code;
+        }
+        return md5code;
     }
 
     //============================== 静态内部类 ========================================
