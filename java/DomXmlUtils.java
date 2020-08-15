@@ -1,4 +1,4 @@
-package util;
+package com.hh.tool.serverinfo.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +22,8 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.File;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -31,13 +32,13 @@ import java.util.Properties;
  *
  * @author owen pan
  */
-public class DomXmlUtils {
-    private Logger logger = LoggerFactory.getLogger(DomXmlUtils.class);
+public class DomXmlUtil {
+    private Logger logger = LoggerFactory.getLogger(DomXmlUtil.class);
     private DocumentBuilderFactory dbf;
     private DocumentBuilder db;
     private File file;
 
-    public DomXmlUtils(File path) {
+    public DomXmlUtil(File path) {
         this.file = path;
         dbf = DocumentBuilderFactory.newInstance();
         // 如果创建的解析器在解析XML文档时必须删除元素内容中的空格，则为true，否则为false
@@ -60,42 +61,40 @@ public class DomXmlUtils {
         }
     }
 
-    public static class DomXmlFinder {
+    public static class DomXmlFinder{
         private Logger logger = LoggerFactory.getLogger(DomXmlFinder.class);
-
         /**
          * 选择Node ，exp：/father/son[@id='001']
-         *
          * @param express 表达式
-         * @param doc     document对象
+         * @param doc document对象
          * @return Node
          */
-        private Object selectNode(String express, Document doc, QName type) {
+        private Object selectNode(String express, Document doc, QName type){
             Object result = null;
             //创建XPath工厂
             XPathFactory xpathFactory = XPathFactory.newInstance();
             //创建XPath对象
             XPath xpath = xpathFactory.newXPath();
             try {
-                result = xpath.evaluate(express, doc.getDocumentElement(), type);
+                result =  xpath.evaluate(express, doc.getDocumentElement(), type);
             } catch (XPathExpressionException e) {
                 logger.error(e.getMessage(), e);
             }
             return result;
         }
-
         public Node selectSingleNode(String express, Document doc) {
-            return (Node) selectNode(express, doc, XPathConstants.NODE);
+            return (Node) selectNode(express,doc, XPathConstants.NODE);
         }
 
         public NodeList selectNodeList(String express, Document doc) {
-            return (NodeList) selectNode(express, doc, XPathConstants.NODESET);
+            return (NodeList) selectNode(express,doc, XPathConstants.NODESET);
         }
     }
 
-    public static abstract class BaseDomXmlParser<T> extends DomXmlFinder {
+    public  static abstract class BaseDomXmlParser<T> extends DomXmlFinder {
         protected abstract T parse(Document doc);
     }
+
 
 
     // 修改
@@ -103,15 +102,16 @@ public class DomXmlUtils {
         try {
             Document xmldoc = db.parse(file);
             domXmlUpdater.update(xmldoc);
-            return new BaseTransformerFactoryDomSaver(xmldoc, file);
+            return new BaseTransformerFactoryDomSaver(xmldoc,file);
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            return null;
+           logger.error(e.getMessage(),e);
+           return null;
         }
     }
 
 
-    abstract class BaseDomXmlUpdater extends DomXmlFinder {
+
+    abstract class BaseDomXmlUpdater extends DomXmlFinder{
         protected abstract void update(Document doc);
     }
 
@@ -130,9 +130,9 @@ public class DomXmlUtils {
                 TransformerFactory factory = TransformerFactory.newInstance();
                 Transformer former = factory.newTransformer();
                 former.setParameter("indent-number", 2);
-                Properties prop = new Properties();
-                prop.setProperty(OutputKeys.METHOD, "xml");
-                prop.setProperty(OutputKeys.INDENT, "yes");
+                Properties prop=new Properties();
+                prop.setProperty( OutputKeys.METHOD, "xml" );
+                prop.setProperty(OutputKeys.INDENT,"yes");
                 prop.setProperty("{http://xml.apache.org/xalan}indent-amount", "4");
 
                 former.setOutputProperties(prop);
@@ -147,14 +147,14 @@ public class DomXmlUtils {
         try {
             Document xmldoc = db.parse(file);
             baseDomXmlDeleter.delete(xmldoc);
-            return new BaseTransformerFactoryDomSaver(xmldoc, file);
+            return new BaseTransformerFactoryDomSaver(xmldoc,file);
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            logger.error(e.getMessage(),e);
         }
         return null;
     }
 
-    abstract class BaseDomXmlDeleter extends DomXmlFinder {
+    abstract class BaseDomXmlDeleter extends DomXmlFinder{
         protected abstract void delete(Document doc);
     }
 
@@ -163,35 +163,36 @@ public class DomXmlUtils {
             // 创建Document对象
             Document xmldoc = db.parse(file);
             baseDomXmlUpdater.update(xmldoc);
-            if (!file.createNewFile()) {
+            if(!file.createNewFile()){
                 throw new RuntimeException("create Xml file fail,Xml file has exists");
             }
-            return new BaseTransformerFactoryDomSaver(xmldoc, file);
+            return new BaseTransformerFactoryDomSaver(xmldoc,file);
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+           logger.error(e.getMessage(),e);
             return null;
         }
     }
 
-
     public static void main(String[] args) {
-        DomXmlUtils domXmlUtil = new DomXmlUtils(new File(""));
-        System.out.println(domXmlUtil.parseXml(new DomXmlUtils.BaseDomXmlParser<Object>() {
+        DomXmlUtil domXmlUtil = new DomXmlUtil(new File( "/broadcast.xml"));
+        Object re= domXmlUtil.parseXml(new DomXmlUtil.BaseDomXmlParser<List<String>>() {
             @Override
-            protected Object parse(Document doc) {
+            protected List<String> parse(Document doc) {
+                List<String> list=new ArrayList<>();
                 Element root = doc.getDocumentElement();
                 NodeList items = root.getElementsByTagName("broadcast-item");
                 for (int i = 0; i < items.getLength(); i++) {
                     Element item = (Element) items.item(i);
                     if (item.hasAttributes()) {
-                        System.out.println(item.getAttribute("enable") + item.getAttribute("url"));
+                        list.add(Boolean.parseBoolean(item.getAttribute("enable"))+ item.getAttribute("url"));
                     }
-
                 }
                 return null;
             }
-        }));
+        });
+        System.out.println(re);
     }
+
 
 
 }
