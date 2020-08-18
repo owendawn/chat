@@ -180,7 +180,7 @@ public class PUtil {
      * @param val 日期字符串.格式为:yyyy-MM-dd HH:mm:ss
      * @return 日期
      */
-    public static LocalDateTime getDateTime(String val) {
+   public static LocalDateTime getDateTime(String val) {
         LocalDateTime localDateTime = null;
         if (isBlank(val)) {
             return null;
@@ -189,8 +189,6 @@ public class PUtil {
             val = val.trim();
             String pattern = "yyyy-MM-dd HH:mm:ss";
             val = val.replace("/", "-");
-            // 处理 2019-06-27 10:06:46.0
-            val = val.replace(".0", "");
             if ("yyyy-MM-dd".length() == val.length()) {
                 val += " 00:00:00";
             } else if ("yyyy-MM-dd HH:mm".length() == val.length()) {
@@ -199,10 +197,12 @@ public class PUtil {
                 pattern = "yyyy-MM-dd HH:mm:ss.SSS";
             } else if ("yyyy-MM-dd HH:mm:ss.S".length() == val.length()) {
                 pattern = "yyyy-MM-dd HH:mm:ss.S";
+            } else if ("yyyy-MM-dd HH:mm:ss.SS".length() == val.length()) {
+                pattern = "yyyy-MM-dd HH:mm:ss.SS";
             }
             localDateTime = LocalDateTime.parse(val, DateTimeFormatter.ofPattern(pattern));
         } catch (Exception e) {
-            log.error("把字符串时间[ " + val + " ], 转换成时间发生异常:" + e.getMessage());
+            logger.error("把字符串时间[ " + val + " ], 转换成时间发生异常:" + e.getMessage(),e);
         }
         return localDateTime;
     }
