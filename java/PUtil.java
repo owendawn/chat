@@ -1,4 +1,4 @@
-package com.hh.tool.serverinfo.util;
+package com.hh.commons.core.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -202,7 +202,7 @@ public class PUtil {
             }
             localDateTime = LocalDateTime.parse(val, DateTimeFormatter.ofPattern(pattern));
         } catch (Exception e) {
-            logger.error("把字符串时间[ " + val + " ], 转换成时间发生异常:" + e.getMessage(),e);
+            log.error("把字符串时间[ " + val + " ], 转换成时间发生异常:" + e.getMessage(),e);
         }
         return localDateTime;
     }
