@@ -186,7 +186,7 @@ PanUtil = {
     },
     //url参数解析
     getURLSearchParams: function() {
-        if (window.location.search == "") {
+       if (window.location.search == "") {
             return {};
         }
         var search = window.location.search.trim().substring(1);
@@ -200,8 +200,14 @@ PanUtil = {
         var strs = search.split("&");
         var o = {};
         for (var i = 0; i < strs.length; i++) {
-            var it = strs[i].split("=");
-            o[it[0].toString()] = it[1];
+            var it = strs[i].indexOf("=");
+	    if(it===''){
+		continue;
+	    }
+            if(it<=-1){
+                o[strs[i]]="";
+            }
+            o[strs[i].substr(0,it)] = strs[i].substr(it+1)
         }
         return o;
     },
