@@ -1,4 +1,10 @@
-package com.example.rfid.util;
+package com.uv.hydrology.utils;
+
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
  * 2019/11/12 10:25
@@ -135,7 +141,33 @@ public class ByteUtil {
         }
     }
 
+    /**
+     * byte[a] append byte[b] to new byte[a+b]
+     */
+    public static byte[] append(byte[] a, byte[] b) {
+        byte[] arr=new byte[a.length+b.length];
+        System.arraycopy(a,0,arr,0,a.length);
+        System.arraycopy(b,0,arr,a.length,b.length);
+        return arr;
+    }
+
+    public static byte[] subArray(byte[] a,int from ,int to) {
+        byte[] arr=new byte[to-from];
+        System.arraycopy(a,from,arr,0,to-from);
+        return arr;
+    }
+
+    public static float bytesToFloat(byte[] bytes){
+        ByteBuffer buf=ByteBuffer.allocateDirect(4);
+        //默认大端，小端用这行
+        buf.order(ByteOrder.LITTLE_ENDIAN);
+        buf.put(bytes);
+        buf.rewind();
+        return buf.getFloat();
+    }
+
     public static void main(String[] args) {
+        System.out.println(ByteUtil.bytesToFloat(ByteUtil.hexToBytes("1904563e")));
 //        String str = "hello";
 //        long begin = System.currentTimeMillis();
 //        long now;
@@ -149,4 +181,6 @@ public class ByteUtil {
 //        System.out.println(bytesToInt(intToBytes(11)));
 //        System.out.println(bytesToNumber(intToBytes((short) 11), Short.class));
     }
+
+
 }

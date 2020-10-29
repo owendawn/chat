@@ -1,260 +1,248 @@
-package com.hh.util;
+package cn.hs.guangzhou.util;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.text.SimpleDateFormat;
-import java.util.*;
-
-import javax.servlet.http.HttpServletResponse;
-
+import org.apache.poi.hssf.usermodel.*;
+import org.apache.poi.poifs.filesystem.OfficeXmlFileException;
+import org.apache.poi.ss.usermodel.CellBase;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import jxl.Cell;
-import jxl.CellType;
-import jxl.DateCell;
-import jxl.Sheet;
-import jxl.Workbook;
-import jxl.write.Label;
-import jxl.write.WritableSheet;
-import jxl.write.WritableWorkbook;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
 
+/**
+ * 2020/7/20 10:50
+ * Excel操作工具类
+ *
+ *
+ *       <dependency>
+ *             <groupId>org.apache.poi</groupId>
+ *             <artifactId>poi-ooxml</artifactId>
+ *             <version>4.1.0</version>
+ *         </dependency>
+ *
+ *         
+ * @author owen pan
+ */
 public class ExcelUtil {
-    /*
-     * 保存文件
-     */
-    @SuppressWarnings("static-access")
-    public static boolean saveFile(File file, String filename, String path) {
-        try {
-            InputStream in = null;
-            OutputStream out = null;
-            try {
-                in = new BufferedInputStream(new FileInputStream(file));
-                out = new BufferedOutputStream(new FileOutputStream(new File(path + file.separator + filename)));
-                byte[] buffer = new byte[1024 * 10];
-                while (in.read(buffer) > 0) {
-                    out.write(buffer);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                return false;
-            } finally {
-                if (null != in) {
-                    in.close();
-                }
-                if (null != out) {
-                    out.close();
-                }
-            }
-        } catch (Exception er) {
-            er.printStackTrace();
-            return false;
+
+    public static String getStringVal(CellBase cell) {
+        if (cell == null) {
+            return "";
         }
-        return true;
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue();
+            case FORMULA:
+                return cell.getCellFormula();
+            case NUMERIC:
+                //日期数据返回LONG类型的时间戳
+                if ("yyyy\"年\"m\"月\"d\"日\";@".equals(cell.getCellStyle().getDataFormatString())) {
+                    //System.out.println(cell.getNumericCellValue()+":日期格式："+cell.getCellStyle().getDataFormatString());
+                    return format.format(HSSFDateUtil.getJavaDate(cell.getNumericCellValue()).getTime());
+                } else {
+                    //数值类型返回double类型的数字
+                    return String.valueOf(cell.getNumericCellValue());
+                }
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            case BLANK:
+                return "";
+            default:
+                return cell.toString();
+        }
     }
 
     /**
-     * 读Excel文件
+     * 2020/7/15 12:30
+     * 要求excel版本在2003及以前 .xls
      *
-     * @param file
-     * @return
+     * @param file       文件
+     * @param sheetIndex tab页游标编码,从0开始
+     * @return {@code java.util.List<java.util.List<java.lang.String>>}
+     * @author owen pan
      */
-    public static List readXLSFile(File file, String type) {
-        if (type.equals("2003")) {
-            return readXLSFile2003(file);
-        } else if (type.equals("2007")) {
-            return readXLSXFile2007(file);
-        } else {
-            System.out.println("导入文件类型错误");
-            return new ArrayList();
+    public static List<List<String>> readExcelOfXls(File file, int sheetIndex) throws Exception {
+        if (!file.exists()) {
+            throw new Exception("找不到文件:" + file.getAbsolutePath());
+        }
+        try (FileInputStream fis = new FileInputStream(file)) {
+            return readExcelOfXls(fis, sheetIndex);
         }
     }
 
-    /**
-     * .xls后缀
-     * 读取excel2003文件数据
-     */
-    private static List readXLSFile2003(File file) {
-        try {
-            Workbook book = Workbook.getWorkbook(file);
-            Sheet[] mysheet = book.getSheets();        //读页数(支持多页)
-            List<String[]> xclList = new ArrayList<String[]>();
-            for (int k = 0; k < mysheet.length; k++) {
-                Sheet sheet = book.getSheet(k);
-                int col = sheet.getColumns();
-                int row = sheet.getRows();
-
-                for (int i = 0; i < row; i++) {
-                    String[] rowvalue = new String[col];
-                    for (int j = 0; j < col; j++) {
-                        Cell cell1 = sheet.getCell(j, i);
-                        if (cell1.getType() == CellType.DATE) { //手动填写模板文件时为 date 类型，其他情况有可能不是date类型
-                            DateCell dc = (DateCell) cell1;
-                            Date date = dc.getDate();
-                            TimeZone zone = TimeZone.getTimeZone("GMT");
-                            SimpleDateFormat sdf = new SimpleDateFormat(
-                                    "yyyy-MM-dd HH:mm:ss");
-                            sdf.setTimeZone(zone);
-                            String sDate = sdf.format(date);
-                            rowvalue[j] = sDate;
-                        } else {
-                            String result = cell1.getContents().trim();
-                            rowvalue[j] = result;
-                        }
-                    }
-                    //整条记录只要有一个字段不为空，就认为记录有效，否则忽略该记录。
-                    for (String value : rowvalue) {
-                        if (value.length() > 0) {
-                            xclList.add(rowvalue);
-                            break;
-                        }
-                    }
+    public static List<List<String>> readExcelOfXls(InputStream inputStream, int sheetIndex) throws Exception {
+        HSSFWorkbook hssfWorkbook = new HSSFWorkbook(inputStream);
+        int size = hssfWorkbook.getNumberOfSheets();
+        System.out.println("sheet页数总量：" + size + "，读取第" + (sheetIndex + 1) + "页");
+        // 读取表格内容
+        HSSFSheet hssfSheet = hssfWorkbook.getSheetAt(sheetIndex);
+        List<List<String>> result = new ArrayList<>();
+        if (hssfSheet != null) {
+            for (int rowNum = 1; rowNum <= hssfSheet.getLastRowNum(); rowNum++) {
+                HSSFRow hssfRow = hssfSheet.getRow(rowNum);
+                if (hssfRow == null) {
+                    continue;
                 }
+                int minColIx = hssfRow.getFirstCellNum();
+                int maxColIx = hssfRow.getLastCellNum();
+                List<String> rowList = new ArrayList<>();
+                for (int colIx = minColIx; colIx < maxColIx; colIx++) {
+                    HSSFCell cell = hssfRow.getCell(colIx);
+
+                    rowList.add(getStringVal(cell));
+                }
+                result.add(rowList);
             }
-            return xclList;
-        } catch (Exception e) {
-            //LogUtil.logERR(e);
-            e.printStackTrace();
         }
-        return null;
+        return result;
     }
 
+
     /**
-     * 读EXCEL2007
-     * .xlsx后缀
+     * 2020/7/15 12:42
+     * 要求excel版本在2007以上
      *
-     * @param file
-     * @return
+     * @param file       文件
+     * @param sheetIndex tab页游标编码,从0开始
+     * @return {@code java.util.List<java.util.List<java.lang.Object>>}
+     * @author owen pan
      */
-    private static List readXLSXFile2007(File file) {
-        FileInputStream fs = null;
-        try {
-            fs = new FileInputStream(file);
-            XSSFWorkbook xwb = new XSSFWorkbook(fs);
-            List<String[]> xclList = new ArrayList<String[]>();
-            for (int s = 0; s < xwb.getNumberOfSheets(); s++) {
-                XSSFSheet sheet = xwb.getSheetAt(s);
-                XSSFRow row;
-                for (int i = 0; i < sheet.getPhysicalNumberOfRows(); i++) {    //行
-                    row = sheet.getRow(i);
-                    String[] rowvalue = new String[row.getLastCellNum()];
-                    for (int j = 0; j < row.getLastCellNum(); j++) {    //列
-                        if (row.getCell(j) != null) {
-                            int style = row.getCell(j).getCellType();
-                            if (style == 0) {
-                                rowvalue[j] = row.getCell(j).getRawValue().trim();
-                            } else if (style == 1) {
-                                rowvalue[j] = row.getCell(j).getStringCellValue().trim();
-                            }
-                        } else {
-                            rowvalue[j] = "";
-                        }
-                    }
-                    //整条记录只要有一个字段不为空，就认为记录有效，否则忽略该记录。
-                    for (String value : rowvalue) {
-                        if (value.length() > 0) {
-                            xclList.add(rowvalue);
-                            break;
-                        }
-                    }
-                }
-            }
-            return xclList;
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (fs != null) {
-                try {
-                    fs.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+    public static List<List<String>> readExcelOfXlsx(File file, int sheetIndex) throws Exception {
+        if (!file.exists()) {
+            throw new Exception("找不到文件:" + file.getAbsolutePath());
         }
-        return null;
+        try (FileInputStream fis = new FileInputStream(file)) {
+            return readExcelOfXlsx(fis, sheetIndex);
+        }
     }
 
-    public static void createExcelStream(HttpServletResponse response, String filename, String[] heads, List<String[]> datalist) {
-        OutputStream os = null;
-        WritableWorkbook wbook = null;
-        try {
-            int maxcount = 65536;
-            os = response.getOutputStream();
-            wbook = Workbook.createWorkbook(os);
-            int recodcount = datalist.size();
-            int sheetnum = (recodcount % (maxcount - 1) == 0) ? recodcount / (maxcount - 1) : (recodcount) / (maxcount - 1) + 1;
-            sheetnum = sheetnum > 0 ? sheetnum : 1;
-            for (int m = 0; m < sheetnum; m++) {
-                WritableSheet wsheet = wbook.createSheet("Sheet_" + m, m);
-                if (heads != null && heads.length > 0) {
-                    for (int i = 0; i < heads.length; i++) {
-                        Label label = new Label(i, 0, heads[i]);
-                        wsheet.addCell(label);
-                        label = null;
-                    }
-                }
-
-                int endindex = (m + 1) * (maxcount - 1);
-                if (endindex > datalist.size()) {
-                    endindex = datalist.size();
-                }
-                for (int i = m * (maxcount - 1), k = 0; i < endindex; i++, k++) {
-                    for (int j = 0; j < datalist.get(i).length; j++) {
-                        Label label = new Label(j, k + 1, ((datalist.get(i)[j] != null && !datalist.get(i)[j].equals("null")) ? datalist.get(i)[j] : ""));
-                        wsheet.addCell(label);
-                        label = null;
-                    }
-                }
+    public static List<List<String>> readExcelOfXlsx(InputStream fileInputStream, int sheetIndex) throws Exception {
+        XSSFWorkbook xwb = new XSSFWorkbook(fileInputStream);
+        int size = xwb.getNumberOfSheets();
+        System.out.println("sheet页数总量：" + size + "，读取第" + (sheetIndex + 1) + "页");
+        // 读取表格内容
+        XSSFSheet sheet = xwb.getSheetAt(sheetIndex);
+        List<List<String>> list = new LinkedList<>();
+        for (int i = (sheet.getFirstRowNum() + 1); i <= (sheet.getPhysicalNumberOfRows() - 1); i++) {
+            XSSFRow row = sheet.getRow(i);
+            if (row == null) {
+                continue;
             }
-
-            response.setHeader("Content-disposition", "attachment;" + "filename=" + new String(filename.getBytes("GBK"), "ISO_8859_1") + ".xls");
-            response.setContentType("application/vnd.ms-excel");
-            wbook.write();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (wbook != null) {
-                try {
-                    wbook.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+            List<String> linked = new LinkedList<>();
+            for (int j = row.getFirstCellNum(); j <= row.getLastCellNum(); j++) {
+                linked.add(getStringVal(row.getCell(j)));
             }
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            if (linked.size() != 0) {
+                list.add(linked);
             }
-
         }
+        return list;
+    }
+
+
+    /**
+     * 2020/7/15 13:42
+     * 智能识别并读取excel版本
+     *
+     * @param file       文件
+     * @param sheetIndex tab页游标编码,从0开始
+     * @return {@code java.util.List<java.util.List<java.lang.String>>}
+     * @author owen pan
+     */
+    public static List<List<String>> readExcel(File file, int sheetIndex) throws Exception {
+        try (
+                InputStream is = new FileInputStream(file);
+                PushbackInputStream pis = new PushbackInputStream(is, 8);
+        ) {
+            new HSSFWorkbook(is);
+            System.out.println("Excel2003 版本");
+            if (pis != null) {
+                pis.close();
+            }
+            if (is != null) {
+                is.close();
+            }
+            return readExcelOfXls(file, sheetIndex);
+        } catch (OfficeXmlFileException e) {
+            if (e.getMessage().contains("The supplied data appears to be in the Office 2007+ XML")) {
+                System.out.println("Excel2007 版本");
+                return readExcelOfXlsx(file, sheetIndex);
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    /**
+     * 2020/7/15 12:43
+     * 导出excel
+     *
+     * @param target   导出的excel路径（需要带.xlsx)
+     * @param headList excel的标题备注名称
+     * @param dataList excel数据
+     * @author owen pan
+     */
+    public static void createExcelOfXlsx(File target, List<String> headList, List<List<String>> dataList) throws Exception {
+        try (FileOutputStream fis = new FileOutputStream(target)) {
+            createExcelOfXlsx(fis, headList, dataList);
+        }
+    }
+
+    public static void createExcelOfXlsx(OutputStream os, List<String> headList, List<List<String>> dataList) throws Exception {
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        XSSFSheet sheet = workbook.createSheet();
+        XSSFRow row = sheet.createRow(0);
+        for (int i = 0; i < headList.size(); i++) {
+            XSSFCell cell = row.createCell(i);
+            cell.setCellType(CellType.STRING);
+            cell.setCellValue(headList.get(i));
+        }
+        // ===============================================================
+        for (int n = 0; n < dataList.size(); n++) {
+            XSSFRow row_value = sheet.createRow(n + 1);
+            List<String> cellList = dataList.get(n);
+            for (int i = 0; i < cellList.size(); i++) {
+                XSSFCell cell = row_value.createCell(i);
+                cell.setCellType(CellType.STRING);
+                cell.setCellValue(cellList.get(i));
+            }
+        }
+        workbook.write(os);
+        os.flush();
+        os.close();
+    }
+
+    /**
+     * 2020/7/20 10:51
+     * 下载excel
+     * @param response 返回请求体
+     * @param fileName 下载文件名
+     * @param headList excel头
+     * @param dataList  excel数据
+     * @author owen pan
+     */
+    public static void downloadExcelOfXlsx(HttpServletResponse response, String fileName, List<String> headList, List<List<String>> dataList) throws Exception {
+        response.setContentType("octets/stream");
+        response.setHeader("Content-Disposition", "attachment;filename=\"" + new String(fileName.getBytes("UTF-8"), "iso8859-1") + "\"");
+        OutputStream outputStream = response.getOutputStream();
+        createExcelOfXlsx(outputStream, headList, dataList);
     }
 
     public static void main(String[] args) {
+        List<List<String>> ll = null;
         try {
-            List<HashMap> lists = null;
-//            lists =excelDao.loadZdypxListOfExcel();
-            List<String[]> list=new ArrayList();
-            for(int i=0;i<lists.size();i++){
-                list.add(
-                        new String[]{
-                                lists.get(i).get("c_name").toString(),
-                                lists.get(i).get("i_record_location_set")==null?"":lists.get(i).get("i_record_location_set").toString(),
-                                lists.get(i).get("c_description")==null?"":lists.get(i).get("c_description").toString()
-                        }
-                );
-            }
-            ExcelUtil.createExcelStream(AjaxUtils.getResponseOfHtml(), "文件名", new String[]{"name", "order","gjz"}, list);
+//            ll = readExcel(new File("C:\\Users\\owen-c2-pc\\Desktop/截面串口服务器IP信息.xls"), 0);
+            ll = readExcel(new File("C:\\Users\\owen-c2-pc\\Desktop/衢州航标详细清单表-20200607.xlsx"), 0);
         } catch (Exception e) {
             e.printStackTrace();
         }
+        System.out.println(Optional.ofNullable(ll).orElse(Collections.emptyList()).stream().map(Object::toString).collect(Collectors.joining("\n")));
     }
 }

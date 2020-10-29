@@ -1,4 +1,4 @@
-package com;
+package com.uv.hydrology.utils;
 
 /**
  * CRC16_CCITT：多项式x16+x12+x5+1（0x1021），初始值0x0000，低位在前，高位在后，结果与0x0000异或
@@ -73,8 +73,9 @@ public class CRC16 {
                 boolean bit = ((b >> (7 - i) & 1) == 1);
                 boolean c15 = ((wCRCin >> 15 & 1) == 1);
                 wCRCin <<= 1;
-                if (c15 ^ bit)
+                if (c15 ^ bit) {
                     wCRCin ^= wCPoly;
+                }
             }
         }
         wCRCin &= 0xffff;
@@ -96,8 +97,9 @@ public class CRC16 {
                 boolean bit = ((b >> (7 - i) & 1) == 1);
                 boolean c15 = ((wCRCin >> 15 & 1) == 1);
                 wCRCin <<= 1;
-                if (c15 ^ bit)
+                if (c15 ^ bit) {
                     wCRCin ^= wCPoly;
+                }
             }
         }
         wCRCin &= 0xffff;

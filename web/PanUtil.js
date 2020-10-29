@@ -148,9 +148,45 @@ PanUtil = {
         _s.src=url+"&"+jsonpName+"="+cfn+"&"+this.parseObjectToFormData(data);
         document.body.appendChild(_s);
     },
+    jsonPostMessage:function(url,data,succ){
+        var _s=document.createElement("iframe");
+        _s.style="height:0"
+        var cfn="panutil_"+new Date().getTime();
+        window.addEventListener("message", function(e){
+            var data=JSON.parse(e.data)
+            console.log(data)
+            if(data.type==="PanPostMessage"&&data.panpostmsgid===cfn){
+                succ(data.data,data,e)
+            }
+        }, false);
+        if(url.indexOf("?")<0){
+        	url+="?";
+        }
+        _s.src=url+"&panpostmsgid="+cfn+"&"+this.parseObjectToFormData(data);
+        document.body.appendChild(_s);
+    },
+    iframePostMessage:function(type,url,data,succ){
+        var cfn="paniframe_"+new Date().getTime();
+        var _call=function(e){
+            var data=JSON.parse(e.data)
+            // console.log(data)
+            if(data.type==="PanIframe"&&data.paniframeid===cfn){
+                succ(data.result,data)
+                window.removeEventListener("message", _call);
+            }
+        }
+        window.addEventListener("message", _call, false);
+        window.parent.postMessage(JSON.stringify({
+            type:"PanIframe",
+            paniframeid:cfn,
+            url:url,
+            method:type,
+            data:data
+        }), '*');
+    },
     //url参数解析
     getURLSearchParams: function() {
-        if (window.location.search == "") {
+       if (window.location.search == "") {
             return {};
         }
         var search = window.location.search.trim().substring(1);
@@ -164,8 +200,14 @@ PanUtil = {
         var strs = search.split("&");
         var o = {};
         for (var i = 0; i < strs.length; i++) {
-            var it = strs[i].split("=");
-            o[it[0].toString()] = it[1];
+            var it = strs[i].indexOf("=");
+	    if(it===''){
+		continue;
+	    }
+            if(it<=-1){
+                o[strs[i]]="";
+            }
+            o[strs[i].substr(0,it)] = strs[i].substr(it+1)
         }
         return o;
     },

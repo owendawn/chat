@@ -1,6 +1,5 @@
-package com.hh.jinhua.service.util;
+package com.hh.commons.core.utils;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,28 +7,31 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.Temporal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * 2019/11/13 15:56
  *
  * @author owen pan
  */
-public class PFUtil {
+public class PUtil {
     /**
      * 日志输出器
      */
-    private static Logger log = LoggerFactory.getLogger(PFUtil.class);
+    private static Logger log = LoggerFactory.getLogger(PUtil.class);
 
     /**
      * 获取默认编码
@@ -178,17 +180,15 @@ public class PFUtil {
      * @param val 日期字符串.格式为:yyyy-MM-dd HH:mm:ss
      * @return 日期
      */
-    public static LocalDateTime getDateTime(String val) {
+   public static LocalDateTime getDateTime(String val) {
         LocalDateTime localDateTime = null;
-        if (StringUtils.isBlank(val)) {
+        if (isBlank(val)) {
             return null;
         }
         try {
             val = val.trim();
             String pattern = "yyyy-MM-dd HH:mm:ss";
             val = val.replace("/", "-");
-            // 处理 2019-06-27 10:06:46.0
-            val = val.replace(".0", "");
             if ("yyyy-MM-dd".length() == val.length()) {
                 val += " 00:00:00";
             } else if ("yyyy-MM-dd HH:mm".length() == val.length()) {
@@ -197,10 +197,12 @@ public class PFUtil {
                 pattern = "yyyy-MM-dd HH:mm:ss.SSS";
             } else if ("yyyy-MM-dd HH:mm:ss.S".length() == val.length()) {
                 pattern = "yyyy-MM-dd HH:mm:ss.S";
+            } else if ("yyyy-MM-dd HH:mm:ss.SS".length() == val.length()) {
+                pattern = "yyyy-MM-dd HH:mm:ss.SS";
             }
             localDateTime = LocalDateTime.parse(val, DateTimeFormatter.ofPattern(pattern));
         } catch (Exception e) {
-            log.error("把字符串时间[ " + val + " ], 转换成时间发生异常:" + e.getMessage());
+            log.error("把字符串时间[ " + val + " ], 转换成时间发生异常:" + e.getMessage(),e);
         }
         return localDateTime;
     }
@@ -213,7 +215,7 @@ public class PFUtil {
      * @return 日期
      */
     public static LocalDateTime getDateTime(String pattern, String val) {
-        if (StringUtils.isBlank(val) || StringUtils.isBlank(pattern)) {
+        if (isBlank(val) || isBlank(pattern)) {
             return null;
         }
         LocalDateTime localDateTime = null;
@@ -256,7 +258,7 @@ public class PFUtil {
             return "";
         }
 
-        if (StringUtils.isBlank(pattern)) {
+        if (isBlank(pattern)) {
             // 默认显示的时间格式
             pattern = "yyyy-MM-dd HH:mm:ss";
         }
@@ -293,15 +295,15 @@ public class PFUtil {
         if (null == dateTime) {
             return "";
         }
-        if (StringUtils.isBlank(pattern)) {
+        if (isBlank(pattern)) {
             pattern = "yyyy-MM-dd";
         }
-        if(dateTime instanceof LocalDateTime) {
-            return LocalDateTime.class.cast( dateTime).format(DateTimeFormatter.ofPattern(pattern));
-        }else if(dateTime instanceof LocalDate){
+        if (dateTime instanceof LocalDateTime) {
+            return LocalDateTime.class.cast(dateTime).format(DateTimeFormatter.ofPattern(pattern));
+        } else if (dateTime instanceof LocalDate) {
             return LocalDate.class.cast(dateTime).format(DateTimeFormatter.ofPattern(pattern));
-        }else {
-            throw new RuntimeException("not support format the bean of "+dateTime.getClass());
+        } else {
+            throw new RuntimeException("not support format the bean of " + dateTime.getClass());
         }
     }
 
@@ -391,7 +393,6 @@ public class PFUtil {
      * @param ip      IP
      * @param port    端口
      * @param timeout 超时 单位毫秒
-     * @return null 发送成功，否则返回异常信息
      */
     public static void sendByTCPNoReceive(String msg, String ip, int port, int timeout) {
         try {
@@ -416,11 +417,77 @@ public class PFUtil {
     }
 
     /**
+     * 从inputstream 取byte[]
+     *
+     * @param inputStream 输入流
+     * @return 从流里面读字节数组
+     */
+    public static byte[] getBytesFromInputSteam(InputStream inputStream) {
+        try {
+            byte[] bytes = new byte[1024];
+            int length = 0;
+            List<Byte> list = new ArrayList<>();
+            while ((length = inputStream.read(bytes)) > 0) {
+                for (int i = 0; i < bytes.length; i++) {
+                    list.add(bytes[i]);
+                }
+            }
+            byte[] res = new byte[list.size()];
+            for (int i = 0; i < list.size(); i++) {
+                res[i] = list.get(i);
+            }
+            return res;
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /**
+     * 2020/7/8 9:49
+     *
+     * @param inputStream 输入流
+     * @return {@code java.lang.String} 从流里面读字符串
+     * @author owen pan
+     */
+    public static String getStringFromInputSteam(InputStream inputStream) {
+        InputStreamReader isr = null;
+        BufferedReader br = null;
+        try {
+            isr = new InputStreamReader(inputStream, "UTF-8");
+            br = new BufferedReader(isr);
+            List<String> list = new ArrayList<>();
+            String line = null;
+            while ((line = br.readLine()) != null) {
+                list.add(line);
+            }
+            return String.join("", list);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return null;
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (isr != null) {
+                try {
+                    isr.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    /**
      * 拷贝文件
      *
      * @param sourceFile 源文件
      * @param targetFile 目标文件
-     * @throws IOException
      */
     public static void copyFile(File sourceFile, File targetFile) throws IOException {
         BufferedInputStream inBuff = null;
@@ -457,7 +524,7 @@ public class PFUtil {
      * 获取文件内容
      *
      * @param filePath 文件路径
-     * @return
+     * @return 文件中内容字符串
      */
     public static String readFile(String filePath) {
         StringBuffer stringBuffer = new StringBuffer();
@@ -609,7 +676,7 @@ public class PFUtil {
      * @return 前三后四中间补* （188****7896）
      */
     public static String getFormatMobile(String mobile) {
-        if (StringUtils.isBlank(mobile) || mobile.length() < 11) {
+        if (isBlank(mobile) || mobile.length() < 11) {
             return mobile;
         }
         return mobile.replaceAll("(\\d{3})\\d{4}(\\d{4})", "$1****$2");
@@ -618,11 +685,11 @@ public class PFUtil {
     /**
      * 格式化SQL参数中特殊字符
      *
-     * @param sql
-     * @return
+     * @param sql 原始sql
+     * @return 转义后sql
      */
     public static String escapeSql(String sql) {
-        if (StringUtils.isBlank(sql)) {
+        if (isBlank(sql)) {
             return sql;
         }
         sql = sql.replace("_", "\\_")
@@ -638,7 +705,7 @@ public class PFUtil {
      * @return 格式化后的字符串
      */
     public static String toNumberString(double value, String pattern) {
-        if (StringUtils.isBlank(pattern)) {
+        if (isBlank(pattern)) {
             pattern = "#.##";
         }
         DecimalFormat df = new DecimalFormat(pattern);
@@ -648,7 +715,7 @@ public class PFUtil {
 
 
     /**
-     * 通过反射获取Bean中所有属性和属性值
+     * 通过反射获取Bean中所有属性和属性值，field版本
      *
      * @param o Bean
      * @return 属性和属性值
@@ -685,12 +752,40 @@ public class PFUtil {
 
         return fieldMap;
     }
+    /**
+     * 通过反射获取Bean中所有属性和属性值，get版本
+     *
+     * @param source Bean
+     * @return 属性和属性值
+     */
+    public static Map<String,Object> getBeanMap2(Object source){
+        if(source==null){
+            return null;
+        }
+        HashMap<String,Object> map=new HashMap<>();
+        Method[] methods=source.getClass().getMethods();
+        for (Method method : methods) {
+            if (!method.getName().startsWith("get")||method.getParameterCount()>0) {
+                continue;
+            }
+            try {
+                map.put(method.getName().substring(3,4).toLowerCase()+method.getName().substring(4),method.invoke(source));
+            } catch (IllegalAccessException | InvocationTargetException e) {
+//                e.printStackTrace();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+        map.remove("class");
+        return map;
+    }
 
     /**
      * 将list中，根据对象某一属性，将该属性设为key的map
+     *
      * @param list 对象集合
-     * @param key 关键字
-     * @param <T> 对象类型
+     * @param key  关键字
+     * @param <T>  对象类型
      * @return HashMap<String, T>
      */
     public static <T> HashMap<String, T> listToMapByKey(List<T> list, String key) {
@@ -714,7 +809,7 @@ public class PFUtil {
                     for (T o : list) {
                         Method method = o.getClass().getMethod("get" + key.substring(0, 1).toUpperCase() + key.substring(1));
                         Object k = method.invoke(o);
-                        map.put(k.toString(),o);
+                        map.put(k.toString(), o);
                     }
                 } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
 
@@ -726,32 +821,195 @@ public class PFUtil {
 
     /**
      * 前面补占位符到固定长度
-     * @param raw
-     * @param replace
-     * @param length
-     * @return
+     *
+     * @param raw     原始字符串
+     * @param replace 补位字字符
+     * @param length  总长
+     * @return 补位后字符串
      */
-    public static String fillToPrefix(Object raw,char replace,int length){
-        String str=raw.toString();
-        while (str.length()<length){
-            str=replace+str;
+    public static String fillToPrefix(Object raw, char replace, int length) {
+        String str = raw.toString();
+        while (str.length() < length) {
+            str = replace + str;
         }
         return str;
     }
 
-    public static PanMap<String,Object> newPanMap(){
-        return new PanMap<String,Object>();
+    /**
+     * 把文件集合打成zip压缩包
+     *
+     * @param srcFiles 压缩文件集合
+     * @param zipFile  zip文件名
+     * @throws RuntimeException 异常
+     */
+    public static void toZip(List<File> srcFiles, File zipFile) throws RuntimeException {
+        long start = System.currentTimeMillis();
+        if (zipFile == null) {
+            log.error("压缩包文件名为空！");
+            return;
+        }
+        if (!zipFile.getName().endsWith(".zip")) {
+            log.error("压缩包文件名异常，zipFile={}", zipFile.getPath());
+            return;
+        }
+        ZipOutputStream zos = null;
+        try {
+            zos = new ZipOutputStream(new FileOutputStream(zipFile));
+            for (File srcFile : srcFiles) {
+                byte[] buf = new byte[1024];
+                zos.putNextEntry(new ZipEntry(srcFile.getName()));
+                int len;
+                FileInputStream in = new FileInputStream(srcFile);
+                while ((len = in.read(buf)) != -1) {
+                    zos.write(buf, 0, len);
+                }
+                zos.setComment("我是注释");
+                in.close();
+                zos.closeEntry();
+            }
+            long end = System.currentTimeMillis();
+            log.info("压缩完成，耗时：" + (end - start) + " ms");
+        } catch (Exception e) {
+            log.error("ZipUtil toZip exception, ", e);
+            throw new RuntimeException("zipFile error from ZipUtils", e);
+        } finally {
+            if (zos != null) {
+                try {
+                    zos.close();
+                } catch (IOException e) {
+                    log.error("ZipUtil toZip close exception, ", e);
+                }
+            }
+        }
     }
 
-    public static class PanMap<K,V> extends HashMap<K,V>{
+    /**
+     * 2020/7/8 9:56
+     * 判断是否有空格
+     *
+     * @param str 原始字符串
+     * @return {@code boolean}
+     * @author owen pan
+     */
+    public static boolean isBlank(String str) {
+        int strLen;
+        if (str != null && (strLen = str.length()) != 0) {
+            for (int i = 0; i < strLen; ++i) {
+                if (!Character.isWhitespace(str.charAt(i))) {
+                    return false;
+                }
+            }
 
-        public PanMap<K,V> setKeyValuePair(K key, V value) {
+            return true;
+        } else {
+            return true;
+        }
+    }
+
+    /**
+     * 按顺序取值，返回第一个非空非""字符串,若没有返回null
+     *
+     * @param strs 选择字符串数组
+     * @return String
+     * @author owen pan
+     */
+    public static String nvl(String... strs) {
+        for (String str : strs) {
+            if (str != null && str.length() > 0) {
+                return str;
+            }
+        }
+        return null;
+    }
+
+    public static String nvlToString(Object... strs) {
+        for (Object str : strs) {
+            if (str != null && String.valueOf(str).length() > 0) {
+                return String.valueOf(str);
+            }
+        }
+        return null;
+    }
+
+    public static Object decode(Object... os) {
+        for (int i = 1; i + 1 < os.length; i += 2) {
+            if (String.valueOf(os[0]).equals(String.valueOf(os[i]))) {
+                return os[i + 1];
+            }
+        }
+        if (os.length % 2 == 0) {
+            return os[os.length - 1];
+        } else {
+            return os[0];
+        }
+    }
+
+    public static String emptyToNull(String data) {
+        if (data == null || data.trim().length() <= 0) {
+            return null;
+        }
+        return data.trim();
+    }
+
+    public static <T> T castButEmptyToNull(String data, Class<T> tClass) {
+        if (data == null || data.trim().length() <= 0) {
+            return null;
+        }
+        data = data.trim();
+        try {
+            if (tClass == String.class) {
+                return tClass.cast(data);
+            } else if (tClass == Integer.class) {
+                return tClass.cast(Integer.parseInt(data));
+            } else if (tClass == Short.class) {
+                return tClass.cast(Short.parseShort(data));
+            } else if (tClass == Long.class) {
+                return tClass.cast(Long.parseLong(data));
+            } else if (tClass == Float.class) {
+                return tClass.cast(Float.parseFloat(data));
+            } else if (tClass == Double.class) {
+                return tClass.cast(Double.parseDouble(data));
+            } else if (tClass == BigDecimal.class) {
+                return (T) new BigDecimal(data);
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            System.out.println("转换异常：" + data);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static String md5(String plainText) {
+        byte[] secretBytes = null;
+        try {
+            secretBytes = MessageDigest.getInstance("md5").digest(plainText.getBytes());
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+        String md5code = new BigInteger(1, secretBytes).toString(16);
+        for (int i = 0; i < 32 - md5code.length(); i++) {
+            md5code = "0" + md5code;
+        }
+        return md5code;
+    }
+
+    //============================== 静态内部类 ========================================
+
+    public static PanMap<String, Object> newPanMap() {
+        return new PanMap<>();
+    }
+
+    public static class PanMap<K, V> extends HashMap<K, V> {
+
+        public PanMap<K, V> setKeyValuePair(K key, V value) {
             super.put(key, value);
             return this;
         }
     }
 
-    public static class PanKeyValuePair{
+    public static class PanKeyValuePair {
         private String key;
         private Object value;
 
@@ -783,5 +1041,13 @@ public class PFUtil {
                     ", value=" + value +
                     '}';
         }
+    }
+
+    public static void main(String[] args) {
+        toZip(Arrays.asList(
+                new File("C:\\Users\\owen-c2-pc\\Desktop/face.png"),
+                new File("C:\\Users\\owen-c2-pc\\Desktop/a.sql")
+                ),
+                new File("C:\\Users\\owen-c2-pc\\Desktop/test.zip"));
     }
 }
