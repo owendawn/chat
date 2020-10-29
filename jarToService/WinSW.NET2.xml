@@ -1,0 +1,25 @@
+<service>
+  <id>app</id>
+  <name>app</name>
+  <description>0. This service is provided by owen pan.</description>
+  <!-- <env name="ROOT" value="E:\workstation\intellij\UVDownloader"/> -->
+  <executable>java</executable>
+  <arguments> 
+   -Xmx256m -jar "target/uvdownloader-0.0.1-SNAPSHOT.jar" 
+   --server.port=50001
+   --spring.profiles.active=beta
+  </arguments>
+  <!-- <workingdirectory>%ROOT%</workingdirectory> -->
+  <priority>Normal</priority>
+  <onfailure action="restart" delay="60 sec"/>
+  <onfailure action="restart" delay="60 sec"/>
+  <onfailure action="restart" delay="60 sec"/>
+  <resetfailure>1 day</resetfailure>
+  <logpath>console-logs</logpath>
+  <log mode="roll"></log>
+  <stoptimeout>15 sec</stoptimeout>
+  <stopparentprocessfirst>false</stopparentprocessfirst>
+  <startmode>Automatic</startmode>
+  <waithint>30 sec</waithint>
+  <sleeptime>1 sec</sleeptime>
+</service>
