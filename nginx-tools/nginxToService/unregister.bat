@@ -1,0 +1,3 @@
+mynginx.exe uninstall
+
+pause

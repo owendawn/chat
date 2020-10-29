@@ -1,0 +1,2 @@
+nginx.exe -t
+pause

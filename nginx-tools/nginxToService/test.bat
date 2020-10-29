@@ -1,0 +1,3 @@
+mynginx.exe test
+
+pause

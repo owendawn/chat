@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<service>
+  <id>nginx</id>
+  <name>nginx</name>
+  <description>0. This nginx service is provided by owen pan.</description>
+  <env name="ROOT" value="E:\nginx-1.18.0"/>
+  <description>nginx</description>
+  <logpath>%ROOT%\service-log</logpath>
+  <logmode>roll</logmode>
+  <depend></depend>
+  <executable>%ROOT%\nginx.exe -p %ROOT%</executable>
+  <stopexecutable>%ROOT%\nginx.exe -p %ROOT% -s stop</stopexecutable>
+</service>
