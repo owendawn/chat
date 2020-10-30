@@ -2,12 +2,12 @@
 <service>
   <id>nginx</id>
   <name>nginx</name>
-  <description>0. This nginx service is provided by owen pan.</description>
-  <env name="ROOT" value="E:\nginx-1.18.0"/>
-  <description>nginx</description>
-  <logpath>%ROOT%\service-log</logpath>
+  <description>0.nginx</description>
+  <env name="ROOT" value="D:\workstyle\nginx-1.18.0"/>
+  <logpath>D:\workstyle\nginx-1.18.0\log2</logpath>
+  <executable>%ROOT%\nginx.exe</executable>
   <logmode>roll</logmode>
   <depend></depend>
-  <executable>%ROOT%\nginx.exe -p %ROOT%</executable>
-  <stopexecutable>%ROOT%\nginx.exe -p %ROOT% -s stop</stopexecutable>
+  <startargument>-p %ROOT%</startargument>
+  <stopargument>-p%ROOT% -s stop</stopargument>
 </service>
