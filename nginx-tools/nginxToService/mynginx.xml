@@ -3,11 +3,14 @@
   <id>nginx</id>
   <name>nginx</name>
   <description>0.nginx</description>
-  <env name="ROOT" value="D:\workstyle\nginx-1.18.0"/>
-  <logpath>D:\workstyle\nginx-1.18.0\log2</logpath>
-  <executable>%ROOT%\nginx.exe</executable>
+  <executable>D:/nginx-1.11.2/nginx.exe</executable>
+  <workingdirectory>D:/nginx-1.11.2</workingdirectory>
+  <logpath>D:/nginx-1.11.2/log2</logpath>
   <logmode>roll</logmode>
   <depend></depend>
-  <startargument>-p %ROOT%</startargument>
-  <stopargument>-p%ROOT% -s stop</stopargument>
+  <startargument></startargument>
+  <!-- 高版本，因为进程占用导致无法quit，故需要手动关闭 -->
+  <!-- <stopargument>-s quit</stopargument> -->
+  <!-- 该参数无效，此处仅用于占位，以便快速结束服务，但是cmd运行该命令可结束所有nginx进程：taskkill /f /t /im nginx.exe -->
+  <stopexecutable>taskkill /f /t /im nginx.exe</stopexecutable>
 </service>
