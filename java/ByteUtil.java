@@ -165,7 +165,33 @@ public class ByteUtil {
         buf.rewind();
         return buf.getFloat();
     }
-
+    
+    public static int bytesIndexOf(byte[] bytes,byte[] search){
+        if(bytes==null||bytes.length<=0){
+            throw new RuntimeException("error raw bytes");
+        }
+        if(search==null||search.length<=0){
+            throw new RuntimeException("error search bytes");
+        }
+        for (int i = 0; i < bytes.length; i++) {
+            boolean has=false;
+            byte first=bytes[i];
+            if(first==search[0]) {
+                has=true;
+                if (i + search.length <= bytes.length) {
+                    for (int j = 1; j < search.length; j++) {
+                        if(bytes[i+j]!=search[j]){
+                            has=false;
+                        }
+                    }
+                }
+                if(has){
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
     public static void main(String[] args) {
         System.out.println(ByteUtil.bytesToFloat(ByteUtil.hexToBytes("1904563e")));
 //        String str = "hello";
