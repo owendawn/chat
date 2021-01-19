@@ -811,6 +811,41 @@ public class PUtil {
         return map;
     }
 
+    public static  <T> T  convertToAnotherBean(Object source,  Class<T> targetClass) {
+        if(source==null){
+            return null;
+        }
+        try {
+            T entity = targetClass.newInstance();
+            Method[] methods=targetClass.getMethods();
+            for (Method method : methods) {
+                if(method.getParameterCount()==1&&method.getName().startsWith("set")){
+                    try {
+                        Method m1 = source.getClass().getMethod("g"+method.getName().substring(1));
+                        if(m1.getReturnType()==method.getParameterTypes()[0]) {
+                            method.invoke(entity, m1.invoke(source));
+                        }else{
+                            try {
+                                Object re = m1.invoke(source);
+                                if (re != null) {
+                                    method.invoke(entity, method.getParameterTypes()[0].cast(re));
+                                }
+                            }catch (Exception e){
+                                //尝试强制类型转换失败
+                            }
+                        }
+                    } catch (NoSuchMethodException | InvocationTargetException e) {
+//                            e.printStackTrace();
+                    }
+                }
+            }
+            return entity;
+        } catch (InstantiationException | IllegalAccessException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     /**
      * 将list中，根据对象某一属性，将该属性设为key的map
      *
