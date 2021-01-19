@@ -1,4 +1,4 @@
-package com.hh.commons.core.utils;
+package com.uv.outfieldequipment.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +31,7 @@ public class PUtil {
     /**
      * 日志输出器
      */
-    private static Logger log = LoggerFactory.getLogger(PUtil.class);
+    private final static Logger log = LoggerFactory.getLogger(PUtil.class);
 
     /**
      * 获取默认编码
@@ -39,12 +39,13 @@ public class PUtil {
      * @return 默认编码
      */
     public static Charset getDefaultCharset() {
-        return Charset.forName("UTF-8");
+        return StandardCharsets.UTF_8;
     }
 
     /**
      * 数字金额转大写
      */
+    @SuppressWarnings("unused")
     public static String digitUppercase(double v) {
         final String UNIT = "万千佰拾亿千佰拾万千佰拾元角分";
         final String DIGIT = "零壹贰叁肆伍陆柒捌玖";
@@ -62,29 +63,29 @@ public class PUtil {
         int i = 0;
         // j用来控制单位
         int j = UNIT.length() - strValue.length();
-        String rs = "";
+        StringBuilder rs = new StringBuilder();
         boolean isZero = false;
         for (; i < strValue.length(); i++, j++) {
             char ch = strValue.charAt(i);
             if (ch == '0') {
                 isZero = true;
                 if (UNIT.charAt(j) == '亿' || UNIT.charAt(j) == '万' || UNIT.charAt(j) == '元') {
-                    rs = rs + UNIT.charAt(j);
+                    rs.append(UNIT.charAt(j));
                     isZero = false;
                 }
             } else {
                 if (isZero) {
-                    rs = rs + "零";
+                    rs.append("零");
                     isZero = false;
                 }
-                rs = rs + DIGIT.charAt(ch - '0') + UNIT.charAt(j);
+                rs.append(DIGIT.charAt(ch - '0')).append(UNIT.charAt(j));
             }
         }
-        if (!rs.endsWith("分")) {
-            rs = rs + "整";
+        if (!rs.toString().endsWith("分")) {
+            rs.append("整");
         }
-        rs = rs.replaceAll("亿万", "亿");
-        return rs;
+        rs = new StringBuilder(rs.toString().replaceAll("亿万", "亿"));
+        return rs.toString();
     }
 
     /**
@@ -94,6 +95,7 @@ public class PUtil {
      * @param defExt   缺省扩展名
      * @return 扩展名
      */
+    @SuppressWarnings("unused")
     public static String getExtension(String filename, String defExt) {
         if ((filename != null) && (filename.length() > 0)) {
             int i = filename.lastIndexOf('.');
@@ -109,6 +111,7 @@ public class PUtil {
      *
      * @return String
      */
+    @SuppressWarnings("unused")
     public static String getRandomUUID() {
         return UUID.randomUUID().toString().replace("-", "").toUpperCase();
     }
@@ -128,6 +131,7 @@ public class PUtil {
      *
      * @return 时间戳
      */
+    @SuppressWarnings("unused")
     public static long getDateTimeEpochMilli() {
         return getDateTime().toInstant(ZoneOffset.ofHours(8)).toEpochMilli();
     }
@@ -138,6 +142,7 @@ public class PUtil {
      * @param time 时间
      * @return 时间戳
      */
+    @SuppressWarnings("unused")
     public static long getDateTimeEpochMilli(LocalDateTime time) {
         if (null == time) {
             return 0L;
@@ -150,6 +155,7 @@ public class PUtil {
      *
      * @return 日期
      */
+    @SuppressWarnings("unused")
     public static LocalDateTime getDateTime() {
         return LocalDateTime.now(getZoneId());
     }
@@ -160,6 +166,7 @@ public class PUtil {
      * @param timestamp 时间戳
      * @return 日期
      */
+    @SuppressWarnings("unused")
     public static LocalDateTime getDate(long timestamp) {
         return Instant.ofEpochMilli(timestamp).atZone(getZoneId()).toLocalDateTime();
     }
@@ -170,6 +177,7 @@ public class PUtil {
      * @param timestamp 时间戳
      * @return 日期
      */
+    @SuppressWarnings("unused")
     public static LocalDateTime getDateTime(long timestamp) {
         return Instant.ofEpochMilli(timestamp).atZone(getZoneId()).toLocalDateTime();
     }
@@ -180,7 +188,8 @@ public class PUtil {
      * @param val 日期字符串.格式为:yyyy-MM-dd HH:mm:ss
      * @return 日期
      */
-   public static LocalDateTime getDateTime(String val) {
+    @SuppressWarnings("unused")
+    public static LocalDateTime getDateTime(String val) {
         LocalDateTime localDateTime = null;
         if (isBlank(val)) {
             return null;
@@ -202,7 +211,7 @@ public class PUtil {
             }
             localDateTime = LocalDateTime.parse(val, DateTimeFormatter.ofPattern(pattern));
         } catch (Exception e) {
-            log.error("把字符串时间[ " + val + " ], 转换成时间发生异常:" + e.getMessage(),e);
+            log.error("把字符串时间[ " + val + " ], 转换成时间发生异常:" + e.getMessage(), e);
         }
         return localDateTime;
     }
@@ -214,6 +223,7 @@ public class PUtil {
      * @param val     日期字符串.格式为:yyyy-MM-dd HH:mm:ss
      * @return 日期
      */
+    @SuppressWarnings("unused")
     public static LocalDateTime getDateTime(String pattern, String val) {
         if (isBlank(val) || isBlank(pattern)) {
             return null;
@@ -232,6 +242,7 @@ public class PUtil {
      *
      * @return 格式化后的字符串
      */
+    @SuppressWarnings("unused")
     public static String getFormatDateTime() {
         return getFormatDateTime(getDateTime());
     }
@@ -242,6 +253,7 @@ public class PUtil {
      * @param dateTime 传入的日期
      * @return 格式化后的字符串
      */
+    @SuppressWarnings("unused")
     public static String getFormatDateTime(LocalDateTime dateTime) {
         return getFormatDateTime(null, dateTime);
     }
@@ -253,6 +265,7 @@ public class PUtil {
      * @param dateTime 传入的日期
      * @return 格式化后的字符串
      */
+    @SuppressWarnings("unused")
     public static String getFormatDateTime(String pattern, LocalDateTime dateTime) {
         if (null == dateTime) {
             return "";
@@ -270,6 +283,7 @@ public class PUtil {
      *
      * @return 格式化后的字符串
      */
+    @SuppressWarnings("unused")
     public static String getFormatDate() {
         return getFormatDate("yyyy-MM-dd", getDateTime());
     }
@@ -280,6 +294,7 @@ public class PUtil {
      * @param dateTime 传入的日期
      * @return 格式化后的字符串
      */
+    @SuppressWarnings("unused")
     public static String getFormatDate(Temporal dateTime) {
         return getFormatDate("yyyy-MM-dd", dateTime);
     }
@@ -291,6 +306,7 @@ public class PUtil {
      * @param dateTime 传入的日期
      * @return 格式化后的字符串
      */
+    @SuppressWarnings("unused")
     public static String getFormatDate(String pattern, Temporal dateTime) {
         if (null == dateTime) {
             return "";
@@ -299,9 +315,9 @@ public class PUtil {
             pattern = "yyyy-MM-dd";
         }
         if (dateTime instanceof LocalDateTime) {
-            return LocalDateTime.class.cast(dateTime).format(DateTimeFormatter.ofPattern(pattern));
+            return ((LocalDateTime) dateTime).format(DateTimeFormatter.ofPattern(pattern));
         } else if (dateTime instanceof LocalDate) {
-            return LocalDate.class.cast(dateTime).format(DateTimeFormatter.ofPattern(pattern));
+            return ((LocalDate) dateTime).format(DateTimeFormatter.ofPattern(pattern));
         } else {
             throw new RuntimeException("not support format the bean of " + dateTime.getClass());
         }
@@ -317,6 +333,7 @@ public class PUtil {
      * @param timeout 超时 单位毫秒
      * @return 返回值
      */
+    @SuppressWarnings("unused")
     public static String sendByUDP(String msg, String ip, int port, int timeout) {
         String recVal;
         try {
@@ -353,8 +370,8 @@ public class PUtil {
      * @param timeout 超时 单位毫秒
      * @return 返回信息
      */
+    @SuppressWarnings("unused")
     public static String sendByTCP(String msg, String ip, int port, int timeout) {
-        String recVal = "";
         try {
             if (timeout <= 0) {
                 timeout = 1000;
@@ -373,17 +390,17 @@ public class PUtil {
             byte[] recs = new byte[1024000];
 
             int len = is.read(recs);
-            recVal = new String(recs, 0, len, getDefaultCharset());
+            String recVal = new String(recs, 0, len, getDefaultCharset());
 
             os.close();
             is.close();
             client.close();
             log.debug("接收【" + ip + ":" + port + "】：" + recVal);
+            return recVal;
         } catch (Exception e) {
             log.error(e.getMessage());
             return "操作失败！" + e.getMessage();
         }
-        return recVal;
     }
 
     /**
@@ -394,6 +411,7 @@ public class PUtil {
      * @param port    端口
      * @param timeout 超时 单位毫秒
      */
+    @SuppressWarnings("unused")
     public static void sendByTCPNoReceive(String msg, String ip, int port, int timeout) {
         try {
             if (timeout <= 0) {
@@ -422,13 +440,14 @@ public class PUtil {
      * @param inputStream 输入流
      * @return 从流里面读字节数组
      */
+    @SuppressWarnings("unused")
     public static byte[] getBytesFromInputSteam(InputStream inputStream) {
         try {
             byte[] bytes = new byte[1024];
-            int length = 0;
+            int length;
             List<Byte> list = new ArrayList<>();
             while ((length = inputStream.read(bytes)) > 0) {
-                for (int i = 0; i < bytes.length; i++) {
+                for (int i = 0; i < length; i++) {
                     list.add(bytes[i]);
                 }
             }
@@ -450,14 +469,15 @@ public class PUtil {
      * @return {@code java.lang.String} 从流里面读字符串
      * @author owen pan
      */
+    @SuppressWarnings("unused")
     public static String getStringFromInputSteam(InputStream inputStream) {
         InputStreamReader isr = null;
         BufferedReader br = null;
         try {
-            isr = new InputStreamReader(inputStream, "UTF-8");
+            isr = new InputStreamReader(inputStream, getDefaultCharset());
             br = new BufferedReader(isr);
             List<String> list = new ArrayList<>();
-            String line = null;
+            String line;
             while ((line = br.readLine()) != null) {
                 list.add(line);
             }
@@ -489,6 +509,7 @@ public class PUtil {
      * @param sourceFile 源文件
      * @param targetFile 目标文件
      */
+    @SuppressWarnings("unused")
     public static void copyFile(File sourceFile, File targetFile) throws IOException {
         BufferedInputStream inBuff = null;
         BufferedOutputStream outBuff = null;
@@ -526,11 +547,12 @@ public class PUtil {
      * @param filePath 文件路径
      * @return 文件中内容字符串
      */
+    @SuppressWarnings("unused")
     public static String readFile(String filePath) {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder stringBuffer = new StringBuilder();
         try {
             BufferedReader reader = new BufferedReader(new FileReader(new File(filePath)));
-            String val = null;
+            String val;
             while ((val = reader.readLine()) != null) {
                 stringBuffer.append(val);
             }
@@ -547,6 +569,7 @@ public class PUtil {
      * @param filePath 文件路径
      * @param content  文件内容
      */
+    @SuppressWarnings("unused")
     public static void saveFile(String filePath, String content) {
         try (FileWriter writer = new FileWriter(filePath)) {
             writer.write(content);
@@ -561,6 +584,7 @@ public class PUtil {
      * @param filePath 文件路径
      * @param content  文件内容
      */
+    @SuppressWarnings("unused")
     public static void saveFile(String filePath, byte[] content) {
         try (FileOutputStream outputStream = new FileOutputStream(filePath)) {
             outputStream.write(content);
@@ -576,9 +600,10 @@ public class PUtil {
      * @param oldPath 源路径
      * @param newPath 目标路径
      */
+    @SuppressWarnings("unused")
     public static void copyFile(String oldPath, String newPath) {
         try {
-            int byteread = 0;
+
             File oldfile = new File(oldPath);
             if (oldfile.exists()) {
                 // 文件存在时
@@ -586,6 +611,7 @@ public class PUtil {
                 // 读入原文件
                 FileOutputStream fs = new FileOutputStream(newPath);
                 byte[] buffer = new byte[1024 * 100];
+                int byteread;
                 while ((byteread = inStream.read(buffer)) != -1) {
                     fs.write(buffer, 0, byteread);
                 }
@@ -603,6 +629,7 @@ public class PUtil {
      * @param url      文件地址
      * @param filePath 保存路径
      */
+    @SuppressWarnings("unused")
     public static boolean downloadFile(String url, String filePath) {
         try {
             URL fileUrl = new URL(url);
@@ -612,7 +639,7 @@ public class PUtil {
 
             File newFile = new File(filePath);
             if (!newFile.getParentFile().exists()) {
-                newFile.getParentFile().mkdirs();
+                boolean re = newFile.getParentFile().mkdirs();
             }
 
             try (InputStream inputStream = conn.getInputStream();
@@ -620,7 +647,7 @@ public class PUtil {
 
                 byte[] buffer = new byte[1204];
 
-                int readByte = 0;
+                int readByte;
                 while ((readByte = inputStream.read(buffer)) != -1) {
                     outputStream.write(buffer, 0, readByte);
                 }
@@ -645,6 +672,7 @@ public class PUtil {
      * @param timeout 超时
      * @return 网页内容
      */
+    @SuppressWarnings("unused")
     public static String getURLContentByHttpURLConnection(String uri, int timeout) {
         StringBuilder content = new StringBuilder();
         try {
@@ -657,7 +685,7 @@ public class PUtil {
             conn.connect();
 
             BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
-            String str = null;
+            String str;
             while ((str = br.readLine()) != null) {
                 content.append(str);
             }
@@ -675,6 +703,7 @@ public class PUtil {
      * @param mobile 11位手机号码
      * @return 前三后四中间补* （188****7896）
      */
+    @SuppressWarnings("unused")
     public static String getFormatMobile(String mobile) {
         if (isBlank(mobile) || mobile.length() < 11) {
             return mobile;
@@ -688,6 +717,7 @@ public class PUtil {
      * @param sql 原始sql
      * @return 转义后sql
      */
+    @SuppressWarnings("unused")
     public static String escapeSql(String sql) {
         if (isBlank(sql)) {
             return sql;
@@ -704,6 +734,7 @@ public class PUtil {
      * @param pattern 格式 #.## （1.234 -> 1.23 | 1.1 -> 1.1） #。00 （1.234 -> 1.234 | 1.1 -> 1.10）
      * @return 格式化后的字符串
      */
+    @SuppressWarnings("unused")
     public static String toNumberString(double value, String pattern) {
         if (isBlank(pattern)) {
             pattern = "#.##";
@@ -720,6 +751,7 @@ public class PUtil {
      * @param o Bean
      * @return 属性和属性值
      */
+    @SuppressWarnings("unused")
     public static Map<String, String> getBeanMap(Object o) {
         Map<String, String> fieldMap = new HashMap<>();
 
@@ -728,10 +760,8 @@ public class PUtil {
             Field.setAccessible(fields, true);
             for (Field field : fields) {
                 Object obj = field.get(o);
-
                 if (obj instanceof String || obj instanceof Integer || obj instanceof Double) {
                     fieldMap.put(field.getName(), field.get(o).toString());
-                    continue;
                 }
             }
             if (null != o.getClass().getGenericSuperclass()) {
@@ -740,39 +770,40 @@ public class PUtil {
                 Field.setAccessible(fields, true);
                 for (Field field : fields) {
                     Object obj = field.get(o);
-
                     if (obj instanceof String || obj instanceof Integer || obj instanceof Double) {
                         fieldMap.put(field.getName(), field.get(o).toString());
-                        continue;
                     }
                 }
             }
         } catch (Exception e) {
+            //
         }
 
         return fieldMap;
     }
+
     /**
      * 通过反射获取Bean中所有属性和属性值，get版本
      *
      * @param source Bean
      * @return 属性和属性值
      */
-    public static Map<String,Object> getBeanMap2(Object source){
-        if(source==null){
+    @SuppressWarnings("unused")
+    public static Map<String, Object> getBeanMap2(Object source) {
+        if (source == null) {
             return null;
         }
-        HashMap<String,Object> map=new HashMap<>();
-        Method[] methods=source.getClass().getMethods();
+        HashMap<String, Object> map = new HashMap<>();
+        Method[] methods = source.getClass().getMethods();
         for (Method method : methods) {
-            if (!method.getName().startsWith("get")||method.getParameterCount()>0) {
+            if (!method.getName().startsWith("get") || method.getParameterCount() > 0) {
                 continue;
             }
             try {
-                map.put(method.getName().substring(3,4).toLowerCase()+method.getName().substring(4),method.invoke(source));
+                map.put(method.getName().substring(3, 4).toLowerCase() + method.getName().substring(4), method.invoke(source));
             } catch (IllegalAccessException | InvocationTargetException e) {
 //                e.printStackTrace();
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -788,6 +819,7 @@ public class PUtil {
      * @param <T>  对象类型
      * @return HashMap<String, T>
      */
+    @SuppressWarnings("unused")
     public static <T> HashMap<String, T> listToMapByKey(List<T> list, String key) {
         if (list == null) {
             return null;
@@ -796,7 +828,7 @@ public class PUtil {
         if (list.size() > 0) {
             if (list.get(0) instanceof Map) {
                 for (T o : list) {
-                    Map it = (Map) o;
+                    Map<String, Object> it = (Map<String, Object>) o;
                     Object k = map.get(key);
                     if (k == null) {
                         throw new RuntimeException("key not support to be null");
@@ -805,14 +837,15 @@ public class PUtil {
                 }
             } else {
                 try {
-                    list.get(0).getClass().getMethod("get" + key.substring(0, 1).toUpperCase() + key.substring(1));
+                    String name = "get" + key.substring(0, 1).toUpperCase() + key.substring(1);
+                    list.get(0).getClass().getMethod(name);
                     for (T o : list) {
-                        Method method = o.getClass().getMethod("get" + key.substring(0, 1).toUpperCase() + key.substring(1));
+                        Method method = o.getClass().getMethod(name);
                         Object k = method.invoke(o);
                         map.put(k.toString(), o);
                     }
                 } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-
+                    //
                 }
             }
         }
@@ -827,12 +860,13 @@ public class PUtil {
      * @param length  总长
      * @return 补位后字符串
      */
+    @SuppressWarnings("unused")
     public static String fillToPrefix(Object raw, char replace, int length) {
-        String str = raw.toString();
+        StringBuilder str = new StringBuilder(raw.toString());
         while (str.length() < length) {
-            str = replace + str;
+            str.insert(0, replace);
         }
-        return str;
+        return str.toString();
     }
 
     /**
@@ -842,6 +876,7 @@ public class PUtil {
      * @param zipFile  zip文件名
      * @throws RuntimeException 异常
      */
+    @SuppressWarnings("unused")
     public static void toZip(List<File> srcFiles, File zipFile) throws RuntimeException {
         long start = System.currentTimeMillis();
         if (zipFile == null) {
@@ -891,6 +926,7 @@ public class PUtil {
      * @return {@code boolean}
      * @author owen pan
      */
+    @SuppressWarnings("unused")
     public static boolean isBlank(String str) {
         int strLen;
         if (str != null && (strLen = str.length()) != 0) {
@@ -913,6 +949,7 @@ public class PUtil {
      * @return String
      * @author owen pan
      */
+    @SuppressWarnings("unused")
     public static String nvl(String... strs) {
         for (String str : strs) {
             if (str != null && str.length() > 0) {
@@ -922,6 +959,7 @@ public class PUtil {
         return null;
     }
 
+    @SuppressWarnings("unused")
     public static String nvlToString(Object... strs) {
         for (Object str : strs) {
             if (str != null && String.valueOf(str).length() > 0) {
@@ -931,6 +969,7 @@ public class PUtil {
         return null;
     }
 
+    @SuppressWarnings("unused")
     public static Object decode(Object... os) {
         for (int i = 1; i + 1 < os.length; i += 2) {
             if (String.valueOf(os[0]).equals(String.valueOf(os[i]))) {
@@ -944,6 +983,7 @@ public class PUtil {
         }
     }
 
+    @SuppressWarnings("unused")
     public static String emptyToNull(String data) {
         if (data == null || data.trim().length() <= 0) {
             return null;
@@ -951,6 +991,7 @@ public class PUtil {
         return data.trim();
     }
 
+    @SuppressWarnings("unused")
     public static <T> T castButEmptyToNull(String data, Class<T> tClass) {
         if (data == null || data.trim().length() <= 0) {
             return null;
@@ -981,26 +1022,28 @@ public class PUtil {
         }
     }
 
+    @SuppressWarnings("unused")
     public static String md5(String plainText) {
-        byte[] secretBytes = null;
+        byte[] secretBytes;
         try {
             secretBytes = MessageDigest.getInstance("md5").digest(plainText.getBytes());
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e.getMessage());
         }
-        String md5code = new BigInteger(1, secretBytes).toString(16);
+        StringBuilder md5code = new StringBuilder(new BigInteger(1, secretBytes).toString(16));
         for (int i = 0; i < 32 - md5code.length(); i++) {
-            md5code = "0" + md5code;
+            md5code.insert(0, "0");
         }
-        return md5code;
+        return md5code.toString();
     }
 
     //============================== 静态内部类 ========================================
-
+    @SuppressWarnings("unused")
     public static PanMap<String, Object> newPanMap() {
         return new PanMap<>();
     }
 
+    @SuppressWarnings("unused")
     public static class PanMap<K, V> extends HashMap<K, V> {
 
         public PanMap<K, V> setKeyValuePair(K key, V value) {
@@ -1009,6 +1052,7 @@ public class PUtil {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class PanKeyValuePair {
         private String key;
         private Object value;
