@@ -1,8 +1,7 @@
-package com.uv.hydrology.utils;
+package com.uv.wm.utils;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
+import io.netty.buffer.ByteBuf;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -157,6 +156,13 @@ public class ByteUtil {
         return arr;
     }
 
+    public static byte[] appendArray(byte[] a,byte[] b) {
+        byte[] arr=new byte[a.length+b.length];
+        System.arraycopy(a,0,arr,0,a.length);
+        System.arraycopy(b,0,arr,a.length,b.length);
+        return arr;
+    }
+
     public static float bytesToFloat(byte[] bytes){
         ByteBuffer buf=ByteBuffer.allocateDirect(4);
         //默认大端，小端用这行
@@ -165,7 +171,7 @@ public class ByteUtil {
         buf.rewind();
         return buf.getFloat();
     }
-    
+
     public static int bytesIndexOf(byte[] bytes,byte[] search){
         if(bytes==null||bytes.length<=0){
             throw new RuntimeException("error raw bytes");
@@ -192,6 +198,54 @@ public class ByteUtil {
         }
         return -1;
     }
+
+    public static String bytesToHexWithPlaceholder(byte[] bytes, String placeholder){
+        if(bytes==null||bytes.length==0){
+            return "";
+        }
+        StringBuffer sb = new StringBuffer(bytes.length);
+        for (int i = 0; i < bytes.length; i++) {
+            String sTemp = Integer.toHexString(0xFF & bytes[i]);
+            if (sTemp.length() < 2) {
+                sb.append(0);
+            }
+            sb.append(sTemp.toUpperCase());
+            sb.append(placeholder);
+        }
+        return sb.toString().substring(0,sb.length()-placeholder.length());
+    }
+
+    public static ByteBuffer bigToLittile(byte[] bytes){
+        ByteBuffer buffer = ByteBuffer.allocate(bytes.length);
+        buffer.order(ByteOrder.BIG_ENDIAN);
+        buffer.put(bytes);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        buffer.compact();
+        return buffer;
+    }
+    public static ByteBuffer toByteBufferOfBig(byte[] bytes){
+        ByteBuffer buffer = ByteBuffer.allocate(bytes.length);
+        buffer.order(ByteOrder.BIG_ENDIAN);
+        buffer.put(bytes);
+        buffer.compact();
+        return buffer;
+    }
+
+    /*
+    * ======================================= 以下仅提供给netty =================================
+     */
+
+    public static String byteBuffToHex(ByteBuf byteBuf, String placeHolder){
+        byte[] bytes;
+        if(byteBuf.hasArray()){
+            bytes=byteBuf.array();
+        }else {
+            bytes=new byte[byteBuf.readableBytes()];
+            byteBuf.getBytes(0,bytes);
+        }
+        return bytesToHexWithPlaceholder(bytes,placeHolder);
+    }
+
     public static void main(String[] args) {
         System.out.println(ByteUtil.bytesToFloat(ByteUtil.hexToBytes("1904563e")));
 //        String str = "hello";
