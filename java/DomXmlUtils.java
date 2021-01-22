@@ -1,4 +1,4 @@
-package com.hh.tool.serverinfo.util;
+package com.uv.wm.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,27 +33,37 @@ import java.util.Properties;
  * @author owen pan
  */
 public class DomXmlUtil {
-    private Logger logger = LoggerFactory.getLogger(DomXmlUtil.class);
+    private static Logger logger = LoggerFactory.getLogger(DomXmlUtil.class);
     private DocumentBuilderFactory dbf;
     private DocumentBuilder db;
-    private File file;
 
-    public DomXmlUtil(File path) {
-        this.file = path;
-        dbf = DocumentBuilderFactory.newInstance();
+    public static DomXmlUtil newInstance() {
+        DomXmlUtil domXmlUtil=new DomXmlUtil();
+        domXmlUtil.dbf = DocumentBuilderFactory.newInstance();
         // 如果创建的解析器在解析XML文档时必须删除元素内容中的空格，则为true，否则为false
-        dbf.setIgnoringElementContentWhitespace(true);
+        domXmlUtil.dbf.setIgnoringElementContentWhitespace(true);
         try {
             // 创建解析器，解析XML文档
-            db = dbf.newDocumentBuilder();
+            domXmlUtil.db = domXmlUtil.dbf.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
             logger.error(e.getMessage(), e);
         }
+        return domXmlUtil;
     }
 
-    public <T> T parseXml(BaseDomXmlParser<T> domXmlParser) {
+    public <T> T parseXml(File file,BaseDomXmlParser<T> domXmlParser) {
         try {
             Document doc = db.parse(file);
+            return domXmlParser.parse(doc);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            return null;
+        }
+    }
+
+    public <T> T parseXml(String uri,BaseDomXmlParser<T> domXmlParser) {
+        try {
+            Document doc = db.parse(uri);
             return domXmlParser.parse(doc);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -98,7 +108,7 @@ public class DomXmlUtil {
 
 
     // 修改
-    public BaseTransformerFactoryDomSaver modifyXml(BaseDomXmlUpdater domXmlUpdater) {
+    public BaseTransformerFactoryDomSaver modifyXml(File file,BaseDomXmlUpdater domXmlUpdater) {
         try {
             Document xmldoc = db.parse(file);
             domXmlUpdater.update(xmldoc);
@@ -143,7 +153,7 @@ public class DomXmlUtil {
         }
     }
 
-    public BaseTransformerFactoryDomSaver deleteNodeFromXml(BaseDomXmlDeleter baseDomXmlDeleter) {
+    public BaseTransformerFactoryDomSaver deleteNodeFromXml(File file,BaseDomXmlDeleter baseDomXmlDeleter) {
         try {
             Document xmldoc = db.parse(file);
             baseDomXmlDeleter.delete(xmldoc);
@@ -174,8 +184,7 @@ public class DomXmlUtil {
     }
 
     public static void main(String[] args) {
-        DomXmlUtil domXmlUtil = new DomXmlUtil(new File( "/broadcast.xml"));
-        Object re= domXmlUtil.parseXml(new DomXmlUtil.BaseDomXmlParser<List<String>>() {
+        Object re= DomXmlUtil.newInstance().parseXml(new File( "/broadcast.xml"),new BaseDomXmlParser<List<String>>() {
             @Override
             protected List<String> parse(Document doc) {
                 List<String> list=new ArrayList<>();
@@ -193,7 +202,6 @@ public class DomXmlUtil {
         System.out.println(re);
     }
 
-
-
+    
 }
 
