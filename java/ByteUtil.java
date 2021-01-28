@@ -1,9 +1,10 @@
-package com.uv.wm.utils;
+package com.uv.watersupply.utils;
 
 import io.netty.buffer.ByteBuf;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Collections;
 
 /**
  * 2019/11/12 10:25
@@ -215,7 +216,7 @@ public class ByteUtil {
         return sb.toString().substring(0,sb.length()-placeholder.length());
     }
 
-    public static ByteBuffer bigToLittile(byte[] bytes){
+    public static ByteBuffer bigToLittileByteBuffer(byte[] bytes){
         ByteBuffer buffer = ByteBuffer.allocate(bytes.length);
         buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.put(bytes);
@@ -223,6 +224,15 @@ public class ByteUtil {
         buffer.compact();
         return buffer;
     }
+
+    public static byte[] bigToLittileBytes(byte[] bytes){
+        byte[] reverseArray = new byte[bytes.length];
+        for (int i = 0; i < bytes.length; i++) {
+            reverseArray[i] = bytes[bytes.length - i - 1];
+        }
+        return reverseArray;
+    }
+
     public static ByteBuffer toByteBufferOfBig(byte[] bytes){
         ByteBuffer buffer = ByteBuffer.allocate(bytes.length);
         buffer.order(ByteOrder.BIG_ENDIAN);
