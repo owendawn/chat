@@ -1085,6 +1085,12 @@ public class PUtil {
             super.put(key, value);
             return this;
         }
+        public PanMap<K, V> setKeyValuePair(boolean isTrue,K key, V value) {
+            if(isTrue) {
+                super.put(key, value);
+            }
+            return this;
+        }
     }
 
     @SuppressWarnings("unused")
