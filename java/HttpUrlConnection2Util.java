@@ -1,4 +1,4 @@
-package cn.hs.util;
+package com.hh.media.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -24,9 +24,10 @@ import java.util.Map;
  * @author owen pan
  */
 public class HttpUrlConnection2Util {
+    private  Logger log=LoggerFactory.getLogger(HttpUrlConnection2Util.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private final Logger log = LoggerFactory.getLogger(HttpUrlConnection2Util.class);
     private HttpURLConnection conn;
+    private LogLevel logLevel=LogLevel.INFO;
     private HttpComunication httpComunication;
     private TheMap<String, String> header = new TheMap<String, String>() {{
         put("Content-Type", "application/json;charset=utf-8");
@@ -76,13 +77,17 @@ public class HttpUrlConnection2Util {
         }
         return conn;
     }
-
-    public HttpUrlConnection2Util setHeaderPair(String key,String value) {
-        this.header.put(key,value);
+    public HttpUrlConnection2Util setLogLevel(LogLevel logLevel){
+        this.logLevel=logLevel;
         return this;
     }
-    public HttpUrlConnection2Util setParamPair(String key,String value) {
-        this.params.put(key,value);
+    public HttpUrlConnection2Util clearHeaderPairs() {
+        this.header.clear();
+        return this;
+    }
+
+    public HttpUrlConnection2Util setHeaderPair(String key, String value) {
+        this.header.put(key, value);
         return this;
     }
 
@@ -90,9 +95,24 @@ public class HttpUrlConnection2Util {
         this.header = headers;
         return this;
     }
+
+    public HttpUrlConnection2Util clearParamPairs() {
+        this.params.clear();
+        return this;
+    }
+
+    public HttpUrlConnection2Util setParamPair(String key, Object value) {
+        this.params.put(key, value);
+        return this;
+    }
+
     public HttpUrlConnection2Util setParams(TheMap<String, Object> params) {
         this.params = params;
         return this;
+    }
+
+    public TheMap<String, Object> getParams() {
+        return params;
     }
 
     public HttpUrlConnection2Util setConnectTimeout(int millis) {
@@ -144,7 +164,7 @@ public class HttpUrlConnection2Util {
 
     public HttpUrlConnection2Util get(String url) {
         httpComunication = new HttpComunication();
-        httpComunication.setType(HttpComunication.HttpType.GET);
+        httpComunication.setType(HttpMethod.GET);
         try {
             if (params != null && !params.isEmpty()) {
                 if (!url.contains("?")) {
@@ -168,9 +188,35 @@ public class HttpUrlConnection2Util {
         return this;
     }
 
+    public HttpUrlConnection2Util otherRequest(String url, HttpMethod method) {
+        httpComunication = new HttpComunication();
+        httpComunication.setType(HttpMethod.GET);
+        try {
+            if (params != null && !params.isEmpty()) {
+                if (!url.contains("?")) {
+                    url += "?";
+                }
+                url = url + "&" + map2FormData(params);
+            }
+            conn = initConnect(url);
+            //HttpURLConnection默认就是用GET发送请求，所以下面的setRequestMethod可以省略
+            conn.setRequestMethod(method.name());
+            //在对各种参数配置完成后，通过调用connect方法建立TCP连接，但是并未真正获取数据
+            //conn.connect()方法不必显式调用，当调用conn.getInputStream()方法时内部也会自动调用connect方法
+            conn.connect();
+            handleResponse(conn, httpComunication);
+            return this;
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            httpComunication.setCode(500);
+            httpComunication.setMsg(e.getMessage());
+        }
+        return this;
+    }
+
     public HttpUrlConnection2Util postJson(String url) {
         httpComunication = new HttpComunication();
-        httpComunication.setType(HttpComunication.HttpType.POST);
+        httpComunication.setType(HttpMethod.POST);
         try {
             conn = initConnect(url);
             //HttpURLConnection默认就是用GET发送请求，所以下面的setRequestMethod可以省略
@@ -198,9 +244,10 @@ public class HttpUrlConnection2Util {
         }
         return this;
     }
+
     public HttpUrlConnection2Util postForm(String url) {
         httpComunication = new HttpComunication();
-        httpComunication.setType(HttpComunication.HttpType.POST);
+        httpComunication.setType(HttpMethod.POST);
         try {
             conn = initConnect(url);
             //HttpURLConnection默认就是用GET发送请求，所以下面的setRequestMethod可以省略
@@ -265,19 +312,25 @@ public class HttpUrlConnection2Util {
             httpComunication.setResponseHeader(sbResponseHeader.toString());
             httpComunication.setCode(conn.getResponseCode());
             // 判断请求是否成功
-            if (conn.getResponseCode() == 200) {
-                String str = httpComunication.getResponseBodyStr();
-                if (httpComunication.getResponseBodyStr().length() > 100) {
-                    str = str.substring(0, 100) + "...";
-                }
-                log.debug("请求成功,response:" + str);
-            } else {
-                log.warn("请求失败:" + conn.getResponseCode());
+            String str = httpComunication.getResponseBodyStr();
+            if (httpComunication.getResponseBodyStr() != null && httpComunication.getResponseBodyStr().length() > 100) {
+                str = str.substring(0, 100) + "...";
             }
-        } catch (Exception e) {
+            if(logLevel.equal(LogLevel.DEBUG)) {
+                log.debug("response:" + str);
+            }
+        } catch (IOException e) {
+            try {
+                httpComunication.setCode(conn.getResponseCode());
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+            httpComunication.setMsg(e.getMessage());
+            log.warn("请求失败("+httpComunication.getType().name()+")["+httpComunication.getCode()+"]:" + e.getMessage());
+        }catch (Exception e){
             httpComunication.setCode(500);
             httpComunication.setMsg(e.getMessage());
-            log.warn("请求失败:" + e.getMessage(), e);
+            log.warn("请求异常("+httpComunication.getType().name()+")["+httpComunication.getCode()+"]:" + e.getMessage(), e);
         }
     }
 
@@ -318,7 +371,7 @@ public class HttpUrlConnection2Util {
     }
 
     public static class HttpComunication {
-        enum HttpType {GET, POST}
+
 
         //请求头
         private String requestHeader;
@@ -328,7 +381,7 @@ public class HttpUrlConnection2Util {
         private String responseHeader;
         //响应体
         private byte[] responseBody;
-        private HttpType type;
+        private HttpMethod type;
         private String msg;
         private Integer code = 200;
 
@@ -385,11 +438,11 @@ public class HttpUrlConnection2Util {
             this.responseBody = responseBody;
         }
 
-        public HttpType getType() {
+        public HttpMethod getType() {
             return type;
         }
 
-        public void setType(HttpType type) {
+        public void setType(HttpMethod type) {
             this.type = type;
         }
 
@@ -425,10 +478,18 @@ public class HttpUrlConnection2Util {
         }
     }
 
-    public class TheMap<K, V> extends HashMap<K, V> {
+    public static class TheMap<K, V> extends HashMap<K, V> {
         public TheMap<K, V> putPair(K k, V v) {
             this.put(k, v);
             return this;
+        }
+    }
+
+    public static enum HttpMethod {GET, POST,PUT,DELETE}
+    public static enum LogLevel{
+        ERROR,INFO,DEBUG;
+        public boolean equal(LogLevel logLevel){
+           return this.name().equals(logLevel.name());
         }
     }
 
