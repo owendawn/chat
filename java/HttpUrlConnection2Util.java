@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.cert.CertificateException;
@@ -87,7 +88,12 @@ public class HttpUrlConnection2Util {
     }
 
     public HttpUrlConnection2Util setHeaderPair(String key, String value) {
-        this.header.put(key, value);
+        return setHeaderPair(true,key,value);
+    }
+    public HttpUrlConnection2Util setHeaderPair(boolean condition,String key, String value) {
+        if(condition) {
+            this.header.put(key, value);
+        }
         return this;
     }
 
@@ -102,7 +108,12 @@ public class HttpUrlConnection2Util {
     }
 
     public HttpUrlConnection2Util setParamPair(String key, Object value) {
-        this.params.put(key, value);
+        return setParamPair(true,key,value);
+    }
+    public HttpUrlConnection2Util setParamPair(boolean condition,String key, Object value) {
+        if(condition) {
+            this.params.put(key, value);
+        }
         return this;
     }
 
@@ -181,7 +192,11 @@ public class HttpUrlConnection2Util {
             handleResponse(conn, httpComunication);
             return this;
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            if(e instanceof SocketTimeoutException){
+                log.error(e.getMessage()+"@"+url);
+            }else {
+                log.error(e.getMessage(), e);
+            }
             httpComunication.setCode(500);
             httpComunication.setMsg(e.getMessage());
         }
@@ -418,7 +433,7 @@ public class HttpUrlConnection2Util {
 
         public String getResponseBodyStr() {
             try {
-                return new String(responseBody, "UTF-8");
+                return responseBody==null?null: new String(responseBody, "UTF-8");
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
@@ -480,7 +495,12 @@ public class HttpUrlConnection2Util {
 
     public static class TheMap<K, V> extends HashMap<K, V> {
         public TheMap<K, V> putPair(K k, V v) {
-            this.put(k, v);
+            return putPair(true,k,v);
+        }
+        public TheMap<K, V> putPair(boolean condition ,K k, V v) {
+            if(condition) {
+                this.put(k, v);
+            }
             return this;
         }
     }
