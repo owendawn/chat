@@ -25,8 +25,8 @@ import java.text.DecimalFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.Temporal;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -584,10 +584,14 @@ public class PUtil {
      * @param oldPath 源路径
      * @param newPath 目标路径
      */
-    public static void copyFile(String oldPath, String newPath) {
+    public static boolean copyFile(String oldPath, String newPath) {
         try {
             int byteread = 0;
             File oldfile = new File(oldPath);
+            File newfile = new File(newPath);
+            if(!newfile.getParentFile().exists()){
+                newfile.getParentFile().mkdirs();
+            }
             if (oldfile.exists()) {
                 // 文件存在时
                 InputStream inStream = new FileInputStream(oldPath);
@@ -599,10 +603,12 @@ public class PUtil {
                 }
                 fs.close();
                 inStream.close();
+                return true;
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error(e.getMessage());
         }
+        return false;
     }
 
     /**
@@ -696,18 +702,24 @@ public class PUtil {
      * @param h 高度
      */
     public static   boolean thumbnail(String src, String dst, int w, int h) throws IOException {
+        FileOutputStream fos=null;
         try {
             BufferedImage bis = ImageIO.read(new File(src));
             BufferedImage bid = new BufferedImage(w, h, 1);
             Graphics2D g = bid.createGraphics();
             //将读取原文件 写在目标文件的 0,0  w h 范围
             g.drawImage(bis, 0, 0, w, h, null);
-            ImageIO.write(bid, "jpg", new FileOutputStream(dst));
+            fos=new FileOutputStream(dst);
+            ImageIO.write(bid, "jpg", fos);
             g.dispose();
             return true;
         }catch (Exception e){
             log.error("图片压缩失败"+ e.getMessage(),e);
             return false;
+        }finally {
+            if(fos!=null){
+                fos.close();
+            }
         }
     }
 
